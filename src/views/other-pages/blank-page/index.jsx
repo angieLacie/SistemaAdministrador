@@ -1,0 +1,7 @@
+import PageBreadcrumb from '@/components/PageBreadcrumb';
+const page = () => {
+  return <div className="content-wrapper">
+      <PageBreadcrumb title={'Blank Page'} subTitle1={'Insights'} />
+    </div>;
+};
+export default page;

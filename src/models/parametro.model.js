@@ -1,0 +1,18 @@
+export const parametroModel = {
+  ParametroId: "",
+  Empresa: "",
+  Tienda: "",
+  ParametroCodigo: "",
+  ParametroNombre: "",
+  Periodo: "",
+  Valor: "",
+  Orden: 0,
+  Descripcion1: "",
+  Descripcion2: "",
+  ParametroNivel: null,
+  Mensaje: "",
+  Comentario: "",
+  ParametroEstado: "A",
+  Usuario_Creacion: "",
+  Usuario_Modificacion: "",
+};

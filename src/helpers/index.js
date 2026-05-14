@@ -1,0 +1,9 @@
+export const currency = '$';
+export const currentYear = new Date().getFullYear();
+export const appName = 'SmartAdmin';
+export const appTitle = 'SmartAdmin - Enterprise Admin Dashboard';
+export const appDescription = '';
+export const author = 'Webora';
+export const authorWebsite = '';
+export const authorContact = '';
+export const basePath = '';

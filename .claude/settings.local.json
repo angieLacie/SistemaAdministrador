@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(dotnet --version)",
+      "Bash(dotnet run *)",
+      "Bash(curl -s --connect-timeout 5 \"http://localhost:7235/api/TamanoBaseDatos/resumen\" -w \"\\\\nHTTP:%{http_code}\")",
+      "Bash(curl -s \"http://localhost:5145/api/TamanoBaseDatos/resumen\" -w \"\\\\nHTTP:%{http_code}\")",
+      "Bash(curl -s \"http://localhost:5145/api/TamanoBaseDatos?tiendaId=1\" -w \"\\\\nHTTP:%{http_code}\")",
+      "Bash(curl -s \"http://localhost:5145/api/TamanoBaseDatos\" -w \"\\\\nHTTP:%{http_code}\")",
+      "Bash(pip install *)",
+      "Bash(python -c ' *)",
+      "Bash(curl -s \"http://localhost:5145/api/LineasCorporativas/resumen\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('Total lineas:', d['totalLineas']\\); print\\('Por operador:', d['porOperador']\\)\")",
+      "PowerShell(Stop-Process -Name \"Administrador.API.Monitor\" -Force -ErrorAction SilentlyContinue)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "PowerShell(Start-Sleep -Seconds 5; try { $r = Invoke-RestMethod -Uri \"http://localhost:5145/api/LineasCorporativas/filtros\" -TimeoutSec 5; Write-Host \"API OK\"; $r.periodos } catch { Write-Host \"Aun no: $_\" })",
+      "PowerShell(Get-Process | Where-Object { $_.Name -match \"dotnet\" } | Select-Object Id, Name, CPU, StartTime)",
+      "PowerShell(cd \"D:\\\\1.Proyectos 2026\\\\Administrador.API\\\\Administrador.Api.Monitor\"; $job = Start-Job { Set-Location \"D:\\\\1.Proyectos 2026\\\\Administrador.API\\\\Administrador.Api.Monitor\"; dotnet run --no-build -c Release 2>&1 }; Start-Sleep -Seconds 8; Receive-Job $job -Keep | Select-Object -First 20)",
+      "PowerShell($r = Invoke-RestMethod -Uri \"http://localhost:5145/api/LineasCorporativas?periodo=2026-05\" -TimeoutSec 8; Write-Host \"Total registros: $\\($r.Count\\)\"; $r | Select-Object -First 1 | ConvertTo-Json)",
+      "Read(//d/12.Archivos/**)",
+      "Read(//d//**)",
+      "mcp__Claude_in_Chrome__list_connected_browsers",
+      "Bash(dotnet build *)",
+      "Bash(netstat -ano)",
+      "Bash(awk '{print $5}')",
+      "Bash(kill -9 30624)",
+      "Bash(npm run *)",
+      "Bash(jobs\")",
+      "Bash(curl -s http://localhost:7400/api/NotificationProcess/resumen)",
+      "Bash(python -m json.tool)",
+      "Bash(start \"Notificaciones API\" cmd /k \"dotnet run --launch-profile http\")"
+    ]
+  }
+}

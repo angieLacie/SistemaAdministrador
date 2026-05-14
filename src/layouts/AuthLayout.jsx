@@ -1,0 +1,35 @@
+import logoLight from '@/assets/img/logo-light.svg';
+import BackgroundAnimation from '@/components/BackgroundAnimation';
+import { Link, Outlet } from 'react-router';
+const AuthLayout = () => {
+  return <>
+      <nav className="navbar navbar-expand-lg navbar-dark position-fixed w-100 py-3" style={{
+      zIndex: 1000
+    }}>
+        <div className="container">
+          <Link className="navbar-brand" to="/">
+            <img src={logoLight} alt="logo" />
+          </Link>
+          <div className="ms-auto d-flex gap-2">
+            <Link to="/auth/login" className="btn btn-link text-white border-0 text-decoration-none">
+              Login
+            </Link>
+            <Link to="/auth/register" className="btn btn-link text-white border-0 text-decoration-none">
+              Register
+            </Link>
+          </div>
+        </div>
+      </nav>
+
+      <section className="hero-section position-relative overflow-hidden">
+        <div className="container" style={{
+        position: 'relative',
+        zIndex: 1
+      }}>
+          <Outlet />
+        </div>
+        <BackgroundAnimation />
+      </section>
+    </>;
+};
+export default AuthLayout;
