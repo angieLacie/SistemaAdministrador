@@ -86,6 +86,7 @@ export const integracionEnviosApi = {
 
 export const personalApi = {
   filtros: () => httpMonitor.get('/api/Personal/filtros'),
+  buscarPorDni: (dni) => httpMonitor.get(`/api/Personal?search=${encodeURIComponent(dni)}`),
   lista: (filtros = {}) => {
     const params = new URLSearchParams();
     if (filtros.empresa)       params.append('empresa',       filtros.empresa);
@@ -149,4 +150,34 @@ diferencias: (periodo, filtros = {}) => {
   if (filtros.search)  params.append('search',  filtros.search);
   return httpMonitor.get(`/api/Facturacion/diferencias?${params}`);
 },
+};
+
+export const indicadoresApi = {
+  listar: (filtros = {}) => {
+    const params = new URLSearchParams();
+    if (filtros.grupo)        params.append('grupo',        filtros.grupo);
+    if (filtros.estado)       params.append('estado',       filtros.estado);
+    if (filtros.implementado !== undefined && filtros.implementado !== '')
+                              params.append('implementado', filtros.implementado);
+    if (filtros.search)       params.append('search',       filtros.search);
+    const q = params.toString();
+    return httpMonitor.get(`/api/Indicadores${q ? `?${q}` : ''}`);
+  },
+  crear:             (payload)     => httpMonitor.post('/api/Indicadores', payload),
+  obtener:           (id)          => httpMonitor.get(`/api/Indicadores/${id}`),
+  grupos:            ()            => httpMonitor.get('/api/Indicadores/grupos'),
+  editar:            (id, payload) => httpMonitor.put(`/api/Indicadores/${id}`, payload),
+  toggleImplementado:(id)          => httpMonitor.put(`/api/Indicadores/${id}/implementado`, {}),
+  cambiarEstado:     (id, payload) => httpMonitor.put(`/api/Indicadores/${id}/estado`, payload),
+};
+
+export const sistemasSatelitesApi = {
+  listar: (filtros = {}) => {
+    const params = new URLSearchParams();
+    if (filtros.tipo)   params.append('tipo',   filtros.tipo);
+    if (filtros.buscar) params.append('buscar', filtros.buscar);
+    const q = params.toString();
+    return httpMonitor.get(`/api/SistemasSatelites${q ? `?${q}` : ''}`);
+  },
+  tipos: () => httpMonitor.get('/api/SistemasSatelites/tipos'),
 };

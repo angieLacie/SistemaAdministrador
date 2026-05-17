@@ -7,10 +7,9 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-  flexRender,
 } from '@tanstack/react-table';
-import { Row, Col, Button, Modal, ModalHeader, ModalTitle, ModalBody, ModalFooter, Spinner } from 'react-bootstrap';
-import { FaEye, FaPlus, FaPen, FaTrash } from 'react-icons/fa6';
+import { Row, Col, Spinner } from 'react-bootstrap';
+import { FaEye, FaPlus, FaPen, FaTrash, FaXmark } from 'react-icons/fa6';
 import { toast } from 'react-toastify';
 
 import MembresiaModal from './MembresiaModal';
@@ -32,7 +31,6 @@ const GestionMembresias = () => {
   const [resumen, setResumen]             = useState({ total: 0, conOC: 0, conFact: 0 });
   const [loading, setLoading]             = useState(true);
   const [globalFilter, setGlobalFilter]   = useState('');
-  const [searchText, setSearchText]       = useState('');
   const [filterPeriodo, setFilterPeriodo] = useState('');
   const [pagination, setPagination]       = useState({ pageIndex: 0, pageSize: 10 });
 
@@ -119,7 +117,7 @@ const GestionMembresias = () => {
     }),
     columnHelper.accessor('periodo', {
       header: 'Período',
-      cell: ({ getValue }) => <span className="font-monospace">{getValue() ?? '—'}</span>,
+      cell: ({ getValue }) => <span className="text-muted" style={{ fontSize: 12 }}>{getValue() ?? '—'}</span>,
     }),
     columnHelper.accessor('fechaCreacion', {
       header: 'Fecha creación',
@@ -131,18 +129,18 @@ const GestionMembresias = () => {
       header: 'Acciones',
       cell: ({ row }) => (
         <div className="d-flex gap-1">
-          <Button size="sm" variant="outline-info" title="Ver detalle"
-            onClick={() => navigate(`/membresias/${row.original.idMembresia}`)}>
-            <FaEye size={12} />
-          </Button>
-          <Button size="sm" variant="outline-secondary" title="Editar"
-            onClick={() => { setSelectedMem(row.original); setShowModal(true); }}>
-            <FaPen size={12} />
-          </Button>
-          <Button size="sm" variant="outline-danger" title="Eliminar"
-            onClick={() => { setSelectedMem(row.original); setShowDeleteModal(true); }}>
-            <FaTrash size={12} />
-          </Button>
+          {[
+            { icon: <FaEye size={13}/>, title: 'Ver detalle', color: '#0891b2', bg: '#ecfeff', bd: '#a5f3fc', onClick: () => navigate(`/membresias/${row.original.idMembresia}`) },
+            { icon: <FaPen size={13}/>, title: 'Editar', color: '#185FA5', bg: '#eff6ff', bd: '#bfdbfe', onClick: () => { setSelectedMem(row.original); setShowModal(true); } },
+            { icon: <FaTrash size={13}/>, title: 'Eliminar', color: '#dc2626', bg: '#fef2f2', bd: '#fecaca', onClick: () => { setSelectedMem(row.original); setShowDeleteModal(true); } },
+          ].map(({ icon, title, color, bg, bd, onClick }) => (
+            <button key={title} onClick={onClick} title={title}
+              style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:`1.5px solid ${bd}`, background:bg, color, cursor:'pointer', transition:'all 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background=color; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor=color; }}
+              onMouseLeave={e => { e.currentTarget.style.background=bg; e.currentTarget.style.color=color; e.currentTarget.style.borderColor=bd; }}>
+              {icon}
+            </button>
+          ))}
         </div>
       ),
     }),
@@ -204,32 +202,41 @@ const GestionMembresias = () => {
             <div className="st-wrapper">
 
               {/* Toolbar */}
-              <div className="st-toolbar row mb-3 g-2 align-items-center">
-                <Col xs={12} sm={6} lg={4}>
-                  <div className="input-group flex-nowrap">
-                    <span className="input-group-text px-2">
-                      <svg width={14} height={14}><use href="/icons/sprite.svg#search"></use></svg>
-                    </span>
-                    <input type="text" className="form-control"
-                      placeholder="Buscar proyecto, requerimiento..."
-                      value={searchText}
-                      onChange={e => { setSearchText(e.target.value); setGlobalFilter(e.target.value); }}
-                      autoComplete="off"/>
-                    {searchText && (
-                      <button className="btn btn-outline-secondary" type="button"
-                        onClick={() => { setSearchText(''); setGlobalFilter(''); }}>✕</button>
-                    )}
-                  </div>
-                </Col>
-                <Col xs={6} sm={4} lg={2}>
-                  <SearchableSelect value={filterPeriodo} onChange={setFilterPeriodo} options={periodos} placeholder="Periodo" />
-                </Col>
-                <Col className="d-flex justify-content-end gap-2">
-                   
-                  <Button variant="primary" size="sm" onClick={() => { setSelectedMem(null); setShowModal(true); }}>
-                    <FaPlus size={12} className="me-1" /> Nueva membresía
-                  </Button>
-                </Col>
+              <div className="card border-0 shadow-sm mb-3">
+                <div className="card-body py-2 px-3">
+                  <Row className="g-2 align-items-center">
+                    <Col xs={12} md={4}>
+                      <div style={{ position: 'relative' }}>
+                        <i className="ri-search-line" style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'#9ca3af', fontSize:14 }} />
+                        <input type="text" value={globalFilter ?? ''}
+                          onChange={e => setGlobalFilter(e.target.value)}
+                          placeholder="Buscar proyecto, requerimiento..."
+                          autoComplete="off"
+                          style={{ width:'100%', padding:'7px 36px 7px 32px', border:'1.5px solid #dde1e7', borderRadius:8, fontSize:13, outline:'none', background:'white' }}
+                          onFocus={e => e.target.style.borderColor='#185FA5'}
+                          onBlur={e  => e.target.style.borderColor='#dde1e7'}
+                        />
+                        {globalFilter && (
+                          <button onClick={() => setGlobalFilter('')}
+                            style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:2, display:'flex' }}>
+                            <FaXmark size={12} />
+                          </button>
+                        )}
+                      </div>
+                    </Col>
+                    <Col xs={6} md={2}>
+                      <SearchableSelect value={filterPeriodo} onChange={setFilterPeriodo} options={periodos} placeholder="Periodo" />
+                    </Col>
+                    <Col xs="auto" className="ms-auto">
+                      <button onClick={() => { setSelectedMem(null); setShowModal(true); }}
+                        style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 14px', borderRadius:7, border:'1.5px solid #185FA5', background:'#eff6ff', color:'#185FA5', fontSize:13, fontWeight:600, cursor:'pointer', transition:'all 0.15s' }}
+                        onMouseEnter={e => { e.currentTarget.style.background='#185FA5'; e.currentTarget.style.color='white'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background='#eff6ff'; e.currentTarget.style.color='#185FA5'; }}>
+                        <FaPlus size={12} /> Nueva membresía
+                      </button>
+                    </Col>
+                  </Row>
+                </div>
               </div>
 
               <DataTable table={table} emptyMessage="No se encontraron membresías" />
@@ -256,18 +263,16 @@ const GestionMembresias = () => {
       saving={saving}
     />
 
-      {/* MODAL ELIMINAR */}
-      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered size="sm">
-        <ModalHeader closeButton><ModalTitle>Confirmar eliminación</ModalTitle></ModalHeader>
-        <ModalBody>
-          <p className="mb-0">¿Eliminar la membresía <strong>{selectedMem?.codigoProyecto}</strong>?</p>
-          <small className="text-muted">Esta acción no se puede deshacer.</small>
-        </ModalBody>
-        <ModalFooter>
-          <Button variant="outline-secondary" onClick={() => setShowDeleteModal(false)}>Cancelar</Button>
-          <Button variant="danger" onClick={eliminar}>Eliminar</Button>
-        </ModalFooter>
-      </Modal>
+      <ConfirmModal
+        show={showDeleteModal}
+        title="Eliminar membresía"
+        message={`¿Estás seguro de eliminar la membresía "${selectedMem?.codigoProyecto}"? Esta acción no se puede deshacer.`}
+        confirmText="Sí, eliminar"
+        cancelText="Cancelar"
+        variant="danger"
+        onConfirm={eliminar}
+        onCancel={() => { setShowDeleteModal(false); setSelectedMem(null); }}
+      />
 
     </div>
   );

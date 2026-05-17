@@ -10,7 +10,8 @@ import {
 import { Row, Col, Button, Badge, Spinner } from 'react-bootstrap';
 import SearchableSelect from '@/components/SearchableSelect';
 import { toast } from 'react-toastify';
-import { FaPlus, FaPen, FaToggleOn, FaToggleOff } from 'react-icons/fa6';
+import { FaPlus, FaPen, FaToggleOn, FaToggleOff, FaXmark } from 'react-icons/fa6';
+import KpiCard from '@/components/KpiCard';
 
 import PageBreadcrumb from '@/components/PageBreadcrumb';
 import DataTable from '@/components/table/DataTable';
@@ -31,7 +32,6 @@ const GestionPerfiles = () => {
   const [data, setData]           = useState([]);
   const [loading, setLoading]     = useState(true);
   const [globalFilter, setGlobalFilter] = useState('');
-  const [searchText, setSearchText]     = useState('');
   const [filterEstado, setFilterEstado] = useState('');
   const [pagination, setPagination]     = useState({ pageIndex: 0, pageSize: 10 });
 
@@ -88,15 +88,15 @@ const GestionPerfiles = () => {
   const columns = [
     columnHelper.accessor('perfilId', {
       header: 'ID',
-      cell: ({ getValue }) => <span className="text-muted font-monospace">{getValue()}</span>,
+      cell: ({ getValue }) => <span className="text-muted" style={{ fontSize: 12 }}>{getValue()}</span>,
     }),
     columnHelper.accessor('descripcion', {
       header: 'Descripción',
-      cell: ({ getValue }) => <span className="fw-semibold">{getValue() ?? '—'}</span>,
+      cell: ({ getValue }) => <span className="fw-semibold" style={{ fontSize: 13 }}>{getValue() ?? '—'}</span>,
     }),
     columnHelper.accessor('perfilRMS', {
       header: 'Perfil RMS',
-      cell: ({ getValue }) => <span className="font-monospace text-muted">{getValue() ?? '—'}</span>,
+      cell: ({ getValue }) => <span className="text-muted" style={{ fontSize: 12 }}>{getValue() ?? '—'}</span>,
     }),
     columnHelper.accessor('flagChecklist', {
       header: 'Checklist',
@@ -129,18 +129,26 @@ const GestionPerfiles = () => {
       header: 'Acciones',
       cell: ({ row }) => (
         <div className="d-flex gap-1">
-          <Button size="sm" variant="outline-secondary" title="Editar"
-            onClick={() => { setSelected(row.original); setShowModal(true); }}>
-            <FaPen size={12} />
-          </Button>
-          <Button size="sm"
-            variant={row.original.estadoPerfil === 'A' ? 'outline-danger' : 'outline-success'}
-            title={row.original.estadoPerfil === 'A' ? 'Desactivar' : 'Activar'}
-            onClick={() => { setSelected(row.original); setShowDeleteModal(true); }}>
-            {row.original.estadoPerfil === 'A'
-              ? <FaToggleOff size={12} />
-              : <FaToggleOn size={12} />}
-          </Button>
+          <button title="Editar" onClick={() => { setSelected(row.original); setShowModal(true); }}
+            style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:'1.5px solid #bfdbfe', background:'#eff6ff', color:'#185FA5', cursor:'pointer', transition:'all 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background='#185FA5'; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor='#185FA5'; }}
+            onMouseLeave={e => { e.currentTarget.style.background='#eff6ff'; e.currentTarget.style.color='#185FA5'; e.currentTarget.style.borderColor='#bfdbfe'; }}>
+            <FaPen size={13} />
+          </button>
+          {row.original.estadoPerfil === 'A'
+            ? <button title="Desactivar" onClick={() => { setSelected(row.original); setShowDeleteModal(true); }}
+                style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:'1.5px solid #fecaca', background:'#fef2f2', color:'#dc2626', cursor:'pointer', transition:'all 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background='#dc2626'; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor='#dc2626'; }}
+                onMouseLeave={e => { e.currentTarget.style.background='#fef2f2'; e.currentTarget.style.color='#dc2626'; e.currentTarget.style.borderColor='#fecaca'; }}>
+                <FaToggleOff size={13} />
+              </button>
+            : <button title="Activar" onClick={() => { setSelected(row.original); setShowDeleteModal(true); }}
+                style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:'1.5px solid #bbf7d0', background:'#f0fdf4', color:'#16a34a', cursor:'pointer', transition:'all 0.15s' }}
+                onMouseEnter={e => { e.currentTarget.style.background='#16a34a'; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor='#16a34a'; }}
+                onMouseLeave={e => { e.currentTarget.style.background='#f0fdf4'; e.currentTarget.style.color='#16a34a'; e.currentTarget.style.borderColor='#bbf7d0'; }}>
+                <FaToggleOn size={13} />
+              </button>
+          }
         </div>
       ),
     }),
@@ -188,62 +196,66 @@ const GestionPerfiles = () => {
         {/* KPIs */}
         <Row className="mb-4 g-3">
           <Col xs={6} md={4}>
-            <div className="card border-0 shadow-sm">
-              <div className="card-body text-center py-3">
-                <p className="text-muted small text-uppercase mb-1" style={{ fontSize: 10 }}>Total perfiles</p>
-                <h3 className="mb-0 fw-bold" style={{ color: '#185FA5' }}>{kpis.total}</h3>
-              </div>
-            </div>
+            <KpiCard label="Total perfiles" value={kpis.total}
+              color="#185FA5" badgeBg="#dbeafe" badgeColor="#1e40af"
+              badge={kpis.total} subtitle="registrados" />
           </Col>
           <Col xs={6} md={4}>
-            <div className="card border-0 shadow-sm">
-              <div className="card-body text-center py-3">
-                <p className="text-muted small text-uppercase mb-1" style={{ fontSize: 10 }}>Activos</p>
-                <h3 className="mb-0 fw-bold text-success">{kpis.activos}</h3>
-              </div>
-            </div>
+            <KpiCard label="Activos" value={kpis.activos}
+              color="#16a34a" badgeBg="#dcfce7" badgeColor="#166534"
+              badge={`${kpis.total > 0 ? Math.round((kpis.activos / kpis.total) * 100) : 0}%`}
+              subtitle="del total" />
           </Col>
           <Col xs={6} md={4}>
-            <div className="card border-0 shadow-sm">
-              <div className="card-body text-center py-3">
-                <p className="text-muted small text-uppercase mb-1" style={{ fontSize: 10 }}>Inactivos</p>
-                <h3 className="mb-0 fw-bold text-secondary">{kpis.inactivos}</h3>
-              </div>
-            </div>
+            <KpiCard label="Inactivos" value={kpis.inactivos}
+              color="#6b7280" badgeBg="#f3f4f6" badgeColor="#374151"
+              badge={kpis.inactivos} subtitle="sin acceso" />
           </Col>
         </Row>
 
         <Row>
           <Col lg={12}>
             <div className="st-wrapper">
-              <div className="st-toolbar row mb-3 g-2 align-items-center">
-                <Col xs={12} sm={6} lg={3}>
-                  <div className="input-group flex-nowrap">
-                    <span className="input-group-text px-2">
-                      <svg className="sa-icon sa-bold" width={14} height={14}>
-                        <use href="/icons/sprite.svg#search"></use>
-                      </svg>
-                    </span>
-                    <input type="text" className="form-control"
-                      placeholder="Buscar perfil..."
-                      value={searchText}
-                      onChange={e => { setSearchText(e.target.value); setGlobalFilter(e.target.value); }}
-                      autoComplete="off"/>
-                    {searchText && (
-                      <button className="btn btn-outline-secondary" type="button"
-                        onClick={() => { setSearchText(''); setGlobalFilter(''); }}>✕</button>
-                    )}
-                  </div>
-                </Col>
-                <Col xs={6} sm={4} lg={2}>
-                  <SearchableSelect value={filterEstado} onChange={setFilterEstado} options={[{value:'A',label:'Activo'},{value:'I',label:'Inactivo'}]} placeholder="Estado" />
-                </Col>
-                <Col className="d-flex justify-content-end">
-                  <Button variant="primary" size="sm"
-                    onClick={() => { setSelected(null); setShowModal(true); }}>
-                    <FaPlus size={12} className="me-1" /> Nuevo perfil
-                  </Button>
-                </Col>
+              {/* Toolbar */}
+              <div className="card border-0 shadow-sm mb-3">
+                <div className="card-body py-2 px-3">
+                  <Row className="g-2 align-items-center">
+                    <Col xs={12} md={4}>
+                      <div style={{ position: 'relative' }}>
+                        <i className="ri-search-line" style={{
+                          position: 'absolute', left: 10, top: '50%',
+                          transform: 'translateY(-50%)', color: '#9ca3af', fontSize: 14,
+                        }} />
+                        <input type="text" value={globalFilter ?? ''}
+                          onChange={e => setGlobalFilter(e.target.value)}
+                          placeholder="Buscar perfil..."
+                          autoComplete="off"
+                          style={{ width: '100%', padding: '7px 36px 7px 32px', border: '1.5px solid #dde1e7', borderRadius: 8, fontSize: 13, outline: 'none', background: 'white' }}
+                          onFocus={e => e.target.style.borderColor = '#185FA5'}
+                          onBlur={e  => e.target.style.borderColor = '#dde1e7'}
+                        />
+                        {globalFilter && (
+                          <button onClick={() => setGlobalFilter('')}
+                            style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 2, display: 'flex' }}>
+                            <FaXmark size={12} />
+                          </button>
+                        )}
+                      </div>
+                    </Col>
+                    <Col xs={6} md={2}>
+                      <SearchableSelect value={filterEstado} onChange={setFilterEstado}
+                        options={[{value:'A',label:'Activo'},{value:'I',label:'Inactivo'}]} placeholder="Estado" />
+                    </Col>
+                    <Col xs="auto" className="ms-auto">
+                      <button onClick={() => { setSelected(null); setShowModal(true); }}
+                        style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 14px', borderRadius:7, border:'1.5px solid #185FA5', background:'#eff6ff', color:'#185FA5', fontSize:13, fontWeight:600, cursor:'pointer', transition:'all 0.15s' }}
+                        onMouseEnter={e => { e.currentTarget.style.background='#185FA5'; e.currentTarget.style.color='white'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background='#eff6ff'; e.currentTarget.style.color='#185FA5'; }}>
+                        <FaPlus size={12} /> Nuevo perfil
+                      </button>
+                    </Col>
+                  </Row>
+                </div>
               </div>
 
               <DataTable table={table} emptyMessage="No se encontraron perfiles" />

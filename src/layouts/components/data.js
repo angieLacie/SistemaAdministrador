@@ -39,6 +39,10 @@ export const menuItems = [{
   key: 'integracion-envios',
   label: 'Integración Envíos',
   url: '/monitor/integracion-envios'
+},{
+  key: 'indicadores',
+  label: 'Gestión Indicadores',
+  url: '/monitor/indicadores'
 }]
 },    {
   key: 'gestion',
@@ -103,11 +107,19 @@ export const menuItems = [{
   key: 'infraestructura',
   label: 'Infraestructura',
   icon: '/icons/sprite.svg#briefcase',
-  children: [ {
-  key: 'lineas-bd',
-  label: 'Líneas Corporativas',
-  url: '/infraestructura'
-}]
+  children: [{
+    key: 'lineas-bd',
+    label: 'Líneas Corporativas',
+    url: '/infraestructura'
+  },{
+    key: 'sistemas-tienda',
+    label: 'Sistemas Tienda',
+    url: '/sistemas-tienda'
+  },{
+    key: 'sistemas-central',
+    label: 'Sistemas Central',
+    url: '/sistemas-central'
+  }]
 },
 , {
   key: 'data-visualization',

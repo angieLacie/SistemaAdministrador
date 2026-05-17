@@ -2,9 +2,16 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { toast } from 'react-toastify';
-import { FaEye, FaEyeSlash } from 'react-icons/fa6';
+import { FaEye, FaEyeSlash, FaShieldHalved, FaChartLine, FaBell, FaUsers } from 'react-icons/fa6';
 import { authService } from '@/services/auth.service';
 import { useAccesos } from '@/context/AccesosContext';
+
+const features = [
+  { icon: <FaChartLine />, label: 'Gestión de licencias y líneas corporativas' },
+  { icon: <FaBell />,      label: 'Notificaciones y alertas en tiempo real' },
+  { icon: <FaUsers />,     label: 'Administración de usuarios y accesos' },
+  { icon: <FaShieldHalved />, label: 'Control de seguridad centralizado' },
+];
 
 const Login = () => {
   const navigate = useNavigate();
@@ -16,7 +23,7 @@ const Login = () => {
   const onSubmit = async (data) => {
     try {
       setLoading(true);
-      await authService.login(data.usuario, data.clave);
+      await authService.login(data.usuario.trim().toLowerCase(), data.clave);
       await recargarAccesos();
       toast.success('Bienvenido al sistema');
       navigate('/dashboards/principal');
@@ -31,81 +38,121 @@ const Login = () => {
     <div style={{
       minHeight: '100vh',
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: '#f0f4f8',
-      padding: '1rem',
-      position: 'relative',
-      overflow: 'hidden',
+      fontFamily: "'Inter', 'Segoe UI', sans-serif",
     }}>
 
-      {/* Fondo decorativo */}
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', zIndex: 0 }}>
-        <div style={{
-          position: 'absolute', top: -120, left: -120,
-          width: 400, height: 400, borderRadius: '50%',
-          background: 'radial-gradient(circle, #185FA5 0%, transparent 70%)',
-          opacity: 0.12,
-        }} />
-        <div style={{
-          position: 'absolute', bottom: -100, right: -80,
-          width: 350, height: 350, borderRadius: '50%',
-          background: 'radial-gradient(circle, #0f2744 0%, transparent 70%)',
-          opacity: 0.1,
-        }} />
-        <div style={{
-          position: 'absolute', top: '40%', right: '15%',
-          width: 200, height: 200, borderRadius: '50%',
-          background: 'radial-gradient(circle, #1a7fd4 0%, transparent 70%)',
-          opacity: 0.08,
-        }} />
-      </div>
-
-      {/* Card login */}
+      {/* ── Panel izquierdo ── */}
       <div style={{
-        position: 'relative', zIndex: 1,
-        background: 'white',
-        borderRadius: 24,
-        boxShadow: '0 20px 60px rgba(15,39,68,0.12), 0 4px 16px rgba(0,0,0,0.06)',
-        width: '100%', maxWidth: 420,
+        flex: '0 0 52%',
+        background: 'linear-gradient(145deg, #0b1f3a 0%, #133f72 45%, #1a6cbf 100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'flex-start',
+        padding: '4rem 4rem 4rem 5rem',
+        position: 'relative',
         overflow: 'hidden',
       }}>
 
-        {/* Header de la card */}
+        {/* Círculos decorativos */}
         <div style={{
-          background: 'linear-gradient(135deg, #0f2744 0%, #185FA5 60%, #1a7fd4 100%)',
-          padding: '2rem 2rem 1.5rem',
-          textAlign: 'center',
-        }}>
-          {/* Icono */}
+          position: 'absolute', top: -140, right: -140,
+          width: 380, height: 380, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.04)',
+          border: '1px solid rgba(255,255,255,0.07)',
+        }} />
+        <div style={{
+          position: 'absolute', bottom: -100, left: -80,
+          width: 300, height: 300, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.03)',
+          border: '1px solid rgba(255,255,255,0.06)',
+        }} />
+        <div style={{
+          position: 'absolute', top: '55%', right: '8%',
+          width: 160, height: 160, borderRadius: '50%',
+          background: 'rgba(26,108,191,0.25)',
+        }} />
+
+        {/* Logo / marca */}
+        <div style={{ position: 'relative', zIndex: 1, marginBottom: '3rem' }}>
           <div style={{
-            width: 64, height: 64, borderRadius: 18,
-            background: 'rgba(255,255,255,0.15)',
-            backdropFilter: 'blur(10px)',
-            border: '1.5px solid rgba(255,255,255,0.25)',
+            width: 56, height: 56, borderRadius: 16,
+            background: 'rgba(255,255,255,0.12)',
+            border: '1.5px solid rgba(255,255,255,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            margin: '0 auto 1rem',
+            marginBottom: '1.2rem',
+            backdropFilter: 'blur(8px)',
           }}>
-            <svg width={30} height={30} viewBox="0 0 24 24" fill="none">
-              <rect x="3" y="11" width="18" height="11" rx="2" stroke="white" strokeWidth="2"/>
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-            </svg>
+            <FaShieldHalved style={{ color: 'white', fontSize: 26 }} />
           </div>
-          <h4 style={{ color: 'white', fontWeight: 700, marginBottom: 4, fontSize: 20 }}>
-            Iniciar sesión
-          </h4>
-          <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, marginBottom: 0 }}>
-            Sistema Administrativo
+          <h1 style={{
+            color: 'white', fontSize: 32, fontWeight: 800,
+            margin: '0 0 0.5rem', lineHeight: 1.2, letterSpacing: '-0.5px',
+          }}>
+            Sistema<br />Administrativo
+          </h1>
+          <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 15, margin: 0 }}>
+            Plataforma de gestión centralizada
           </p>
         </div>
 
-        {/* Formulario */}
-        <div style={{ padding: '2rem' }}>
+        {/* Features */}
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {features.map((f, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{
+                width: 38, height: 38, borderRadius: 10, flexShrink: 0,
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'rgba(255,255,255,0.85)', fontSize: 15,
+              }}>
+                {f.icon}
+              </div>
+              <span style={{ color: 'rgba(255,255,255,0.75)', fontSize: 14, lineHeight: 1.4 }}>
+                {f.label}
+              </span>
+            </div>
+          ))}
+        </div>
+
+        {/* Footer del panel */}
+        <p style={{
+          position: 'absolute', bottom: 28, left: '5rem',
+          color: 'rgba(255,255,255,0.3)', fontSize: 12, margin: 0, zIndex: 1,
+        }}>
+          © {new Date().getFullYear()} · Acceso restringido
+        </p>
+      </div>
+
+      {/* ── Panel derecho ── */}
+      <div style={{
+        flex: 1,
+        background: '#f5f7fa',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '2rem',
+      }}>
+        <div style={{ width: '100%', maxWidth: 380 }}>
+
+          <div style={{ marginBottom: '2.2rem' }}>
+            <h2 style={{ fontSize: 26, fontWeight: 700, color: '#0f1e30', margin: '0 0 6px' }}>
+              Iniciar sesión
+            </h2>
+            <p style={{ color: '#8a97a8', fontSize: 14, margin: 0 }}>
+              Ingresa tus credenciales para continuar
+            </p>
+          </div>
+
           <form onSubmit={handleSubmit(onSubmit)}>
 
             {/* Usuario */}
             <div style={{ marginBottom: 18 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 6 }}>
+              <label style={{
+                display: 'block', fontSize: 13, fontWeight: 600,
+                color: '#374151', marginBottom: 7, letterSpacing: 0.1,
+              }}>
                 Usuario
               </label>
               <input
@@ -113,23 +160,34 @@ const Login = () => {
                 placeholder="Ingresa tu usuario"
                 autoComplete="username"
                 style={{
-                  width: '100%', padding: '12px 14px',
-                  border: errors.usuario ? '1.5px solid #ef4444' : '1.5px solid #e5e7eb',
-                  borderRadius: 12, fontSize: 14,
-                  fontFamily: 'monospace', textTransform: 'uppercase',
-                  background: '#f9fafb', outline: 'none',
-                  transition: 'border-color 0.2s, box-shadow 0.2s',
+                  width: '100%', padding: '11px 14px',
+                  border: errors.usuario ? '1.5px solid #ef4444' : '1.5px solid #dde1e7',
+                  borderRadius: 10, fontSize: 14, color: '#1a2535',
+                  background: 'white', outline: 'none',
                   boxSizing: 'border-box',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                  transition: 'border-color 0.18s, box-shadow 0.18s',
                 }}
-                onFocus={e => { e.target.style.borderColor = '#185FA5'; e.target.style.boxShadow = '0 0 0 3px rgba(24,95,165,0.08)'; }}
-                onBlur={e  => { e.target.style.borderColor = errors.usuario ? '#ef4444' : '#e5e7eb'; e.target.style.boxShadow = ''; }}
+                onFocus={e => {
+                  e.target.style.borderColor = '#185FA5';
+                  e.target.style.boxShadow = '0 0 0 3px rgba(24,95,165,0.1)';
+                }}
+                onBlur={e => {
+                  e.target.style.borderColor = errors.usuario ? '#ef4444' : '#dde1e7';
+                  e.target.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+                }}
               />
-              {errors.usuario && <p style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>{errors.usuario.message}</p>}
+              {errors.usuario && (
+                <p style={{ fontSize: 12, color: '#ef4444', marginTop: 5 }}>{errors.usuario.message}</p>
+              )}
             </div>
 
             {/* Contraseña */}
-            <div style={{ marginBottom: 28 }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.5, display: 'block', marginBottom: 6 }}>
+            <div style={{ marginBottom: 26 }}>
+              <label style={{
+                display: 'block', fontSize: 13, fontWeight: 600,
+                color: '#374151', marginBottom: 7, letterSpacing: 0.1,
+              }}>
                 Contraseña
               </label>
               <div style={{ position: 'relative' }}>
@@ -139,45 +197,70 @@ const Login = () => {
                   placeholder="••••••••"
                   autoComplete="current-password"
                   style={{
-                    width: '100%', padding: '12px 44px 12px 14px',
-                    border: errors.clave ? '1.5px solid #ef4444' : '1.5px solid #e5e7eb',
-                    borderRadius: 12, fontSize: 14,
-                    background: '#f9fafb', outline: 'none',
-                    transition: 'border-color 0.2s, box-shadow 0.2s',
+                    width: '100%', padding: '11px 44px 11px 14px',
+                    border: errors.clave ? '1.5px solid #ef4444' : '1.5px solid #dde1e7',
+                    borderRadius: 10, fontSize: 14, color: '#1a2535',
+                    background: 'white', outline: 'none',
                     boxSizing: 'border-box',
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                    transition: 'border-color 0.18s, box-shadow 0.18s',
                   }}
-                  onFocus={e => { e.target.style.borderColor = '#185FA5'; e.target.style.boxShadow = '0 0 0 3px rgba(24,95,165,0.08)'; }}
-                  onBlur={e  => { e.target.style.borderColor = errors.clave ? '#ef4444' : '#e5e7eb'; e.target.style.boxShadow = ''; }}
+                  onFocus={e => {
+                    e.target.style.borderColor = '#185FA5';
+                    e.target.style.boxShadow = '0 0 0 3px rgba(24,95,165,0.1)';
+                  }}
+                  onBlur={e => {
+                    e.target.style.borderColor = errors.clave ? '#ef4444' : '#dde1e7';
+                    e.target.style.boxShadow = '0 1px 3px rgba(0,0,0,0.04)';
+                  }}
                 />
-                <button type="button" onClick={() => setShowPass(!showPass)} style={{
-                  position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)',
-                  background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#9ca3af', fontSize: 15, padding: 0, display: 'flex',
-                }}>
+                <button
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  style={{
+                    position: 'absolute', right: 13, top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none', border: 'none',
+                    cursor: 'pointer', color: '#9ca3af',
+                    fontSize: 16, padding: 0, display: 'flex',
+                  }}
+                >
                   {showPass ? <FaEyeSlash /> : <FaEye />}
                 </button>
               </div>
-              {errors.clave && <p style={{ fontSize: 12, color: '#ef4444', marginTop: 4 }}>{errors.clave.message}</p>}
+              {errors.clave && (
+                <p style={{ fontSize: 12, color: '#ef4444', marginTop: 5 }}>{errors.clave.message}</p>
+              )}
             </div>
 
             {/* Botón */}
-            <button type="submit" disabled={loading} style={{
-              width: '100%', padding: '13px',
-              background: loading ? '#93c5fd' : 'linear-gradient(135deg, #185FA5, #1a7fd4)',
-              color: 'white', border: 'none', borderRadius: 12,
-              fontSize: 15, fontWeight: 600,
-              cursor: loading ? 'not-allowed' : 'pointer',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-              boxShadow: loading ? 'none' : '0 4px 15px rgba(24,95,165,0.3)',
-              transition: 'opacity 0.2s',
-            }}>
+            <button
+              type="submit"
+              disabled={loading}
+              style={{
+                width: '100%', padding: '13px',
+                background: loading
+                  ? '#93c5fd'
+                  : 'linear-gradient(135deg, #133f72 0%, #185FA5 60%, #1a7fd4 100%)',
+                color: 'white', border: 'none', borderRadius: 10,
+                fontSize: 15, fontWeight: 700,
+                cursor: loading ? 'not-allowed' : 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
+                boxShadow: loading ? 'none' : '0 6px 20px rgba(19,63,114,0.35)',
+                transition: 'opacity 0.2s, transform 0.15s',
+                letterSpacing: 0.2,
+              }}
+              onMouseEnter={e => { if (!loading) e.target.style.opacity = '0.9'; }}
+              onMouseLeave={e => { e.target.style.opacity = '1'; }}
+            >
               {loading ? (
                 <>
                   <span style={{
                     width: 18, height: 18,
-                    border: '2px solid rgba(255,255,255,0.3)',
+                    border: '2px solid rgba(255,255,255,0.35)',
                     borderTopColor: 'white', borderRadius: '50%',
-                    display: 'inline-block', animation: 'spin 0.8s linear infinite',
+                    display: 'inline-block',
+                    animation: 'spin 0.75s linear infinite',
                   }} />
                   Verificando...
                 </>
@@ -185,16 +268,17 @@ const Login = () => {
             </button>
 
           </form>
-
-          <p style={{ fontSize: 12, color: '#d1d5db', textAlign: 'center', marginTop: 24, marginBottom: 0 }}>
-            Acceso restringido — solo personal autorizado
-          </p>
         </div>
       </div>
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
-        input::placeholder { color: #d1d5db; }
+        input::placeholder { color: #c4cad3; }
+
+        @media (max-width: 720px) {
+          /* Ocultar panel izquierdo en móvil */
+          div[style*="flex: 0 0 52%"] { display: none !important; }
+        }
       `}</style>
     </div>
   );

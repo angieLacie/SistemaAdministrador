@@ -15,6 +15,16 @@ const rutas_validas = [
   '/licencias-tienda',
   '/dashboards/principal',
   '/notificaciones',
+  '/sistemas-tienda',
+  '/sistemas-central',
+  '/infraestructura',
+  '/parametros/llave',
+  '/perfil-vista',
+  '/monitor/tamano-bd',
+  '/monitor/facturacion',
+  '/monitor/integracion-envios',
+  '/monitor/indicadores',
+  '/dashboards/sincronizacion',
 ];
 
 const AccesosContext = createContext(null);

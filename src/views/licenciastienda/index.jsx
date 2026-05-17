@@ -7,10 +7,10 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Row, Col, Button, Badge, Spinner } from 'react-bootstrap';
+import { Row, Col, Badge, Spinner } from 'react-bootstrap';
 import SearchableSelect from '@/components/SearchableSelect';
 import { toast } from 'react-toastify';
-import { FaPlus, FaPen, FaEye, FaTrash } from 'react-icons/fa6';
+import { FaPlus, FaPen, FaEye, FaTrash, FaXmark } from 'react-icons/fa6';
 import { useNavigate } from 'react-router-dom';
 
 import PageBreadcrumb from '@/components/PageBreadcrumb';
@@ -38,7 +38,6 @@ const GestionLicenciasTienda = () => {
   const [resumen, setResumen]   = useState(null);
   const [loading, setLoading]   = useState(true);
   const [globalFilter, setGlobalFilter] = useState('');
-  const [searchText, setSearchText]     = useState('');
   const [filterEmpresa, setFilterEmpresa] = useState('');
   const [filterPeriodo, setFilterPeriodo] = useState('');
   const [filterEstado, setFilterEstado]   = useState('');
@@ -106,7 +105,7 @@ const GestionLicenciasTienda = () => {
     columnHelper.accessor('codigo', {
       header: 'Código',
       cell: ({ getValue }) => (
-        <span className="fw-bold font-monospace" style={{ color: '#185FA5', fontSize: 12 }}>{getValue()}</span>
+        <span className="fw-bold" style={{ color: '#185FA5', fontSize: 13 }}>{getValue()}</span>
       ),
     }),
     columnHelper.accessor('tienda', {
@@ -119,7 +118,7 @@ const GestionLicenciasTienda = () => {
     }),
     columnHelper.accessor('periodo', {
       header: 'Periodo',
-      cell: ({ getValue }) => <span className="font-monospace text-muted" style={{ fontSize: 11 }}>{getValue() ?? '—'}</span>,
+      cell: ({ getValue }) => <span className="text-muted" style={{ fontSize: 12 }}>{getValue() ?? '—'}</span>,
     }),
     columnHelper.accessor('totalCajas', {
       header: 'Cajas',
@@ -155,18 +154,18 @@ const GestionLicenciasTienda = () => {
       header: 'Acciones',
       cell: ({ row }) => (
         <div className="d-flex gap-1">
-          <Button size="sm" variant="outline-primary" title="Ver detalle"
-            onClick={() => navigate(`/licencias-tienda/${row.original.id}`)}>
-            <FaEye size={12} />
-          </Button>
-          <Button size="sm" variant="outline-secondary" title="Editar"
-            onClick={() => { setSelected(row.original); setShowModal(true); }}>
-            <FaPen size={12} />
-          </Button>
-          <Button size="sm" variant="outline-danger" title="Anular"
-            onClick={() => { setSelected(row.original); setShowDeleteModal(true); }}>
-            <FaTrash size={12} />
-          </Button>
+          {[
+            { icon: <FaEye size={13}/>, title: 'Ver detalle', color: '#0891b2', bg: '#ecfeff', bd: '#a5f3fc', onClick: () => navigate(`/licencias-tienda/${row.original.id}`) },
+            { icon: <FaPen size={13}/>, title: 'Editar', color: '#185FA5', bg: '#eff6ff', bd: '#bfdbfe', onClick: () => { setSelected(row.original); setShowModal(true); } },
+            { icon: <FaTrash size={13}/>, title: 'Anular', color: '#dc2626', bg: '#fef2f2', bd: '#fecaca', onClick: () => { setSelected(row.original); setShowDeleteModal(true); } },
+          ].map(({ icon, title, color, bg, bd, onClick }) => (
+            <button key={title} onClick={onClick} title={title}
+              style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:`1.5px solid ${bd}`, background:bg, color, cursor:'pointer', transition:'all 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background=color; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor=color; }}
+              onMouseLeave={e => { e.currentTarget.style.background=bg; e.currentTarget.style.color=color; e.currentTarget.style.borderColor=bd; }}>
+              {icon}
+            </button>
+          ))}
         </div>
       ),
     }),
@@ -278,37 +277,44 @@ const GestionLicenciasTienda = () => {
         <Row>
           <Col lg={12}>
             <div className="st-wrapper">
-              <div className="st-toolbar row mb-3 g-2 align-items-center">
-                <Col xs={12} sm={6} lg={3}>
-                  <div className="input-group flex-nowrap">
-                    <span className="input-group-text px-2">
-                      <svg className="sa-icon sa-bold" width={14} height={14}>
-                        <use href="/icons/sprite.svg#search"></use>
-                      </svg>
-                    </span>
-                    <input type="text" className="form-control"
-                      placeholder="Buscar código, tienda..."
-                      value={searchText}
-                      onChange={e => { setSearchText(e.target.value); setGlobalFilter(e.target.value); }}
-                      autoComplete="off"/>
-                    {searchText && (
-                      <button className="btn btn-outline-secondary" type="button"
-                        onClick={() => { setSearchText(''); setGlobalFilter(''); }}>✕</button>
-                    )}
-                  </div>
-                </Col>
-                <Col xs={6} sm={3} lg={2}>
-                  <SearchableSelect value={filterEmpresa} onChange={setFilterEmpresa} options={empresas} placeholder="Empresa" />
-                </Col>
-                <Col xs={6} sm={3} lg={2}>
-                  <SearchableSelect value={filterPeriodo} onChange={setFilterPeriodo} options={periodos} placeholder="Periodo" />
-                </Col>
-                <Col className="d-flex justify-content-end">
-                  <Button variant="primary" size="sm"
-                    onClick={() => { setSelected(null); setShowModal(true); }}>
-                    <FaPlus size={12} className="me-1" /> Nueva licencia
-                  </Button>
-                </Col>
+              <div className="card border-0 shadow-sm mb-3">
+                <div className="card-body py-2 px-3">
+                  <Row className="g-2 align-items-center">
+                    <Col xs={12} md={3}>
+                      <div style={{ position: 'relative' }}>
+                        <i className="ri-search-line" style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'#9ca3af', fontSize:14 }} />
+                        <input type="text" value={globalFilter ?? ''}
+                          onChange={e => setGlobalFilter(e.target.value)}
+                          placeholder="Buscar código, tienda..."
+                          autoComplete="off"
+                          style={{ width:'100%', padding:'7px 36px 7px 32px', border:'1.5px solid #dde1e7', borderRadius:8, fontSize:13, outline:'none', background:'white' }}
+                          onFocus={e => e.target.style.borderColor='#185FA5'}
+                          onBlur={e  => e.target.style.borderColor='#dde1e7'}
+                        />
+                        {globalFilter && (
+                          <button onClick={() => setGlobalFilter('')}
+                            style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:2, display:'flex' }}>
+                            <FaXmark size={12} />
+                          </button>
+                        )}
+                      </div>
+                    </Col>
+                    <Col xs={6} md={2}>
+                      <SearchableSelect value={filterEmpresa} onChange={setFilterEmpresa} options={empresas} placeholder="Empresa" />
+                    </Col>
+                    <Col xs={6} md={2}>
+                      <SearchableSelect value={filterPeriodo} onChange={setFilterPeriodo} options={periodos} placeholder="Periodo" />
+                    </Col>
+                    <Col xs="auto" className="ms-auto">
+                      <button onClick={() => { setSelected(null); setShowModal(true); }}
+                        style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 14px', borderRadius:7, border:'1.5px solid #185FA5', background:'#eff6ff', color:'#185FA5', fontSize:13, fontWeight:600, cursor:'pointer', transition:'all 0.15s' }}
+                        onMouseEnter={e => { e.currentTarget.style.background='#185FA5'; e.currentTarget.style.color='white'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background='#eff6ff'; e.currentTarget.style.color='#185FA5'; }}>
+                        <FaPlus size={12} /> Nueva licencia
+                      </button>
+                    </Col>
+                  </Row>
+                </div>
               </div>
 
               <DataTable table={table} emptyMessage="No se encontraron licencias" />

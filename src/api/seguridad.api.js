@@ -120,6 +120,19 @@ export const accesosPerfilApi = {
     httpSeguridad.get(`/api/AccesosPerfil/accesos/${perfilId}${sistema ? `?sistema=${sistema}` : ''}`),
 };
 
+export const tiendasApi = {
+  listar: (filtros = {}) => {
+    const params = new URLSearchParams();
+    if (filtros.empresa) params.append('empresa', filtros.empresa);
+    if (filtros.buscar)  params.append('buscar',  filtros.buscar);
+    if (filtros.zona)    params.append('zona',    filtros.zona);
+    const q = params.toString();
+    return httpSeguridad.get(`/api/Tiendas${q ? `?${q}` : ''}`);
+  },
+  empresas: () => httpSeguridad.get('/api/Empresas'),
+  zonas:    () => httpSeguridad.get('/api/Tiendas/zonas'),
+};
+
 export const vistaPerfilApi = {
   //getByPerfil:    (perfilId)       => httpSeguridad.get(`/api/VistaPerfil/perfil/${perfilId}`),
   getEmpresas:    ()               => httpSeguridad.get("/api/VistaPerfil/empresas"),

@@ -75,6 +75,57 @@ const OP_COLOR = { ENTEL: '#f59e0b', CLARO: '#ef4444', MOVISTAR: '#3b82f6' };
 const fmt = (v) => v == null ? '—' : Number(v).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const fmtN = (v) => v == null ? '—' : Number(v).toLocaleString('es-PE');
 
+// ── Edición inline de Con IGV ────────────────────────────────────────────────
+function InlineIgv({ row, onSaved }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal]         = useState('');
+  const [saving, setSaving]   = useState(false);
+
+  const open = () => { setVal(row.costoConIgv != null ? String(row.costoConIgv) : ''); setEditing(true); };
+
+  const save = async () => {
+    const num = parseFloat(val);
+    if (isNaN(num)) { setEditing(false); return; }
+    setSaving(true);
+    try {
+      await lineasCorporativasApi.actualizar(row.id, { ...row, costoConIgv: num });
+      onSaved(row.id, num);
+      setEditing(false);
+    } catch { /* silencioso */ }
+    finally { setSaving(false); }
+  };
+
+  const onKey = (e) => { if (e.key === 'Enter') save(); if (e.key === 'Escape') setEditing(false); };
+
+  if (editing) return (
+    <div className="d-flex align-items-center gap-1" style={{ minWidth: 100 }}>
+      <input
+        autoFocus
+        type="number"
+        step="0.01"
+        className="form-control form-control-sm text-end"
+        style={{ width: 80, fontSize: 12, padding: '1px 4px' }}
+        value={val}
+        onChange={e => setVal(e.target.value)}
+        onKeyDown={onKey}
+        onBlur={save}
+        disabled={saving}
+      />
+    </div>
+  );
+
+  return (
+    <span
+      className="text-end d-block"
+      style={{ color: '#d97706', cursor: 'pointer', borderBottom: '1px dashed #d97706' }}
+      title="Clic para editar"
+      onClick={open}
+    >
+      {fmt(row.costoConIgv)}
+    </span>
+  );
+}
+
 export default function LineasCorporativasDashboard() {
   const [vista, setVista] = useState('dashboard'); // dashboard | tabla | personal
   const [resumen, setResumen] = useState(null);
@@ -136,6 +187,19 @@ export default function LineasCorporativasDashboard() {
   const abrirEdicion = (row) => { setEditRow(row); setEditData({ ...row }); };
   const cerrarEdicion = () => { setEditRow(null); setEditData({}); };
   const guardarEdicion = async () => {
+    // Validar duplicado: periodo + operador + linea + dni (excluyendo el mismo registro)
+    const duplicado = lineas.some(l =>
+      l.id !== editData.id &&
+      l.periodoMes === editData.periodoMes &&
+      l.operador   === editData.operador &&
+      l.linea      === editData.linea &&
+      l.dni        === editData.dni
+    );
+    if (duplicado) {
+      alert(`Ya existe un registro para el periodo ${editData.periodoMes}, operador ${editData.operador}, línea ${editData.linea} y DNI ${editData.dni}.`);
+      return;
+    }
+
     setGuardando(true);
     try {
       const actualizado = await lineasCorporativasApi.actualizar(editData.id, editData);
@@ -216,26 +280,28 @@ export default function LineasCorporativasDashboard() {
         return <span className={`badge bg-${bg}`}>{v}</span>;
       }
     },
-    { accessorKey: 'costoLinea',       header: 'Costo S/',      size: 90,
-      cell: ({ getValue }) => <span className="text-end d-block">{fmt(getValue())}</span>
+    { id: 'costoConIgv', header: 'Con IGV S/', size: 110,
+      accessorFn: r => r.costoConIgv,
+      cell: ({ row }) => <InlineIgv row={row.original} onSaved={(id, val) =>
+        setLineas(prev => prev.map(l => l.id === id ? { ...l, costoConIgv: val } : l))}
+      />
     },
-    { accessorKey: 'montoCostoConDescAPagar', header: 'Con Desc. S/', size: 100,
+    { id: 'sinIgv', header: 'Sin IGV S/', size: 100,
+      accessorFn: r => r.costoConIgv != null ? r.costoConIgv / 1.18 : null,
+      cell: ({ getValue }) => <span className="text-end d-block" style={{ color: '#374151' }}>{fmt(getValue())}</span>
+    },
+    { id: 'margen', header: 'Margen S/', size: 100,
+      accessorFn: r => r.costoConIgv != null ? (r.costoConIgv / 1.18) / 0.85 : null,
       cell: ({ getValue }) => <span className="text-end d-block" style={{ color: '#d97706' }}>{fmt(getValue())}</span>
     },
-    { accessorKey: 'costoConIgv',      header: 'Con IGV S/',    size: 95,
-      cell: ({ getValue }) => <span className="text-end d-block" style={{ color: '#d97706' }}>{fmt(getValue())}</span>
-    },
-    { accessorKey: 'montoPlanSinIgv',  header: 'Plan sin IGV S/', size: 105,
-      cell: ({ getValue }) => <span className="text-end d-block" style={{ color: '#d97706' }}>{fmt(getValue())}</span>
-    },
-    { accessorKey: 'costoSinIgv',      header: 'Sin IGV S/',    size: 90,
-      cell: ({ getValue }) => <span className="text-end d-block" style={{ color: '#d97706' }}>{fmt(getValue())}</span>
-    },
-    { accessorKey: 'margenTandem',     header: 'Margen S/',     size: 90,
-      cell: ({ getValue }) => <span className="text-end d-block" style={{ color: '#d97706' }}>{fmt(getValue())}</span>
-    },
-    { accessorKey: 'montoAFacturar',   header: 'A Facturar S/', size: 110,
-      cell: ({ getValue }) => <span className="text-end d-block" style={{ color: '#d97706', fontWeight: 600 }}>{fmt(getValue())}</span>
+    { id: 'aFacturar', header: 'A Facturar S/', size: 115,
+      accessorFn: r => {
+        if (r.costoConIgv == null) return null;
+        const sinIgv = r.costoConIgv / 1.18;
+        const margen = sinIgv / 0.85;
+        return sinIgv + margen;
+      },
+      cell: ({ getValue }) => <span className="text-end d-block fw-semibold" style={{ color: '#185FA5' }}>{fmt(getValue())}</span>
     },
     { accessorKey: 'puesto',           header: 'Puesto',        size: 160 },
     { accessorKey: 'estadoLaboral',    header: 'Est. Laboral',  size: 100,
@@ -623,33 +689,153 @@ export default function LineasCorporativasDashboard() {
             </div>
             <div className="modal-body">
               <div className="row g-3">
-                {[
-                  ['Estado',       'estado',          'text'],
-                  ['Operador',     'operador',        'text'],
-                  ['Línea',        'linea',           'text'],
-                  ['Plan',         'plan',            'text'],
-                  ['Costo S/',     'costoLinea',      'number'],
-                  ['Equipo',       'equipo',          'text'],
-                  ['DNI',          'dni',             'text'],
-                  ['Nombre',       'nombre',          'text'],
-                  ['Empresa',      'empresaCod',      'text'],
-                  ['CECO',         'ceco',            'text'],
-                  ['Desc. CECO',   'descripcionCeco', 'text'],
-                  ['Responsable',  'responsable',     'text'],
-                  ['Ajuste Extra', 'ajusteExtra',     'number'],
-                  ['OC',           'oc',              'text'],
-                  ['CM',           'cm',              'text'],
-                  ['Monto OC',     'montoOc',         'number'],
-                  ['Año Cobro',    'anioCobro',       'number'],
-                  ['Mes Cobro',    'mesCobro',        'text'],
-                ].map(([label, key, type]) => (
-                  <div className="col-6 col-md-4" key={key}>
-                    <label className="form-label small mb-1">{label}</label>
-                    <input type={type} className="form-control form-control-sm"
-                      value={editData[key] ?? ''}
-                      onChange={e => setEditData(d => ({ ...d, [key]: type === 'number' ? (e.target.value === '' ? null : Number(e.target.value)) : e.target.value }))} />
-                  </div>
-                ))}
+
+                {/* Periodo */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">Periodo</label>
+                  <select className="form-select form-select-sm"
+                    value={editData.periodoMes ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, periodoMes: e.target.value }))}>
+                    <option value="">Seleccionar...</option>
+                    {filtros.periodos?.map(p => <option key={p} value={p}>{p}</option>)}
+                  </select>
+                </div>
+
+                {/* Estado */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">Estado</label>
+                  <select className="form-select form-select-sm"
+                    value={editData.estado ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, estado: e.target.value }))}>
+                    <option value="">Seleccionar...</option>
+                    {['Asignado', 'Custodia', 'Suspendido', 'Baja'].map(s =>
+                      <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+
+                {/* Operador */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">Operador</label>
+                  <input className="form-control form-control-sm"
+                    value={editData.operador ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, operador: e.target.value }))} />
+                </div>
+
+                {/* Línea */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">Línea</label>
+                  <input className="form-control form-control-sm"
+                    value={editData.linea ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, linea: e.target.value }))} />
+                </div>
+
+                {/* Plan */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">Plan</label>
+                  <input className="form-control form-control-sm"
+                    value={editData.plan ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, plan: e.target.value }))} />
+                </div>
+
+                {/* Costo */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">Costo S/</label>
+                  <input type="number" step="0.01" className="form-control form-control-sm"
+                    value={editData.costoLinea ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, costoLinea: e.target.value === '' ? null : Number(e.target.value) }))} />
+                </div>
+
+                {/* Equipo */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">Equipo</label>
+                  <input className="form-control form-control-sm"
+                    value={editData.equipo ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, equipo: e.target.value }))} />
+                </div>
+
+                {/* DNI — busca en personal al salir */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">DNI</label>
+                  <input className="form-control form-control-sm"
+                    value={editData.dni ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, dni: e.target.value }))}
+                    onBlur={async (e) => {
+                      const dni = e.target.value.trim();
+                      if (!dni) return;
+                      try {
+                        const res = await personalApi.buscarPorDni(dni);
+                        const lista = Array.isArray(res) ? res : (res?.items ?? []);
+                        const persona = lista.find(p => p.dni === dni);
+                        if (persona) {
+                          setEditData(d => ({
+                            ...d,
+                            nombre:          persona.nombre          ?? d.nombre,
+                            empresaCod:      persona.empresa         ?? d.empresaCod,
+                            ceco:            persona.cecoId          ?? d.ceco,
+                            descripcionCeco: persona.ceco            ?? d.descripcionCeco,
+                          }));
+                        }
+                      } catch { /* silencioso */ }
+                    }}
+                  />
+                </div>
+
+                {/* Nombre */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">Nombre</label>
+                  <input className="form-control form-control-sm"
+                    value={editData.nombre ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, nombre: e.target.value }))} />
+                </div>
+
+                {/* Empresa */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">Empresa</label>
+                  <input className="form-control form-control-sm"
+                    value={editData.empresaCod ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, empresaCod: e.target.value }))} />
+                </div>
+
+                {/* CECO */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">CECO</label>
+                  <input className="form-control form-control-sm"
+                    value={editData.ceco ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, ceco: e.target.value }))} />
+                </div>
+
+                {/* Desc. CECO */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">Desc. CECO</label>
+                  <input className="form-control form-control-sm"
+                    value={editData.descripcionCeco ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, descripcionCeco: e.target.value }))} />
+                </div>
+
+                {/* Responsable */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">Responsable</label>
+                  <input className="form-control form-control-sm"
+                    value={editData.responsable ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, responsable: e.target.value }))} />
+                </div>
+
+                {/* Año Cobro */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">Año Cobro</label>
+                  <input type="number" className="form-control form-control-sm"
+                    value={editData.anioCobro ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, anioCobro: e.target.value === '' ? null : Number(e.target.value) }))} />
+                </div>
+
+                {/* Mes Cobro */}
+                <div className="col-6 col-md-4">
+                  <label className="form-label small mb-1">Mes Cobro</label>
+                  <input className="form-control form-control-sm"
+                    value={editData.mesCobro ?? ''}
+                    onChange={e => setEditData(d => ({ ...d, mesCobro: e.target.value }))} />
+                </div>
+
               </div>
             </div>
             <div className="modal-footer">

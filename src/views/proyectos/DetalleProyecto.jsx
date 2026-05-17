@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Row, Col, Button, Badge, Form, Spinner, Tab, Tabs, Modal, ModalHeader, ModalTitle, ModalBody, ModalFooter } from 'react-bootstrap';
+import { Row, Col, Badge, Form, Spinner, Tab, Tabs, Modal, ModalHeader, ModalTitle, ModalBody, ModalFooter } from 'react-bootstrap';
 import { toast } from 'react-toastify';
 import { FaArrowLeft, FaPlus, FaPen, FaTrash, FaChevronDown, FaChevronRight } from 'react-icons/fa6';
 import { useForm } from 'react-hook-form';
@@ -33,7 +33,7 @@ const Campo = ({ label, value, mono = false }) => (
     </p>
   </div>
 );
- 
+
 const formatFecha = (f) => {
   if (!f) return '—';
   const d = new Date(f);
@@ -41,6 +41,50 @@ const formatFecha = (f) => {
   return d.toLocaleDateString('es-PE');
 };
 const formatMonto = (m) => m ? `S/ ${Number(m).toLocaleString('es-PE', { minimumFractionDigits: 2 })}` : '—';
+
+// ── Botones reutilizables ─────────────────────────────
+const BtnCancel = ({ onClick }) => (
+  <button type="button" onClick={onClick}
+    style={{ padding:'6px 16px', borderRadius:7, border:'1.5px solid #d1d5db', background:'#f9fafb', color:'#374151', fontSize:13, fontWeight:500, cursor:'pointer' }}
+    onMouseEnter={e => { e.currentTarget.style.background='#374151'; e.currentTarget.style.color='white'; }}
+    onMouseLeave={e => { e.currentTarget.style.background='#f9fafb'; e.currentTarget.style.color='#374151'; }}>
+    Cancelar
+  </button>
+);
+const BtnSubmit = ({ saving, label = 'Guardar', loadingLabel = 'Guardando...' }) => (
+  <button type="submit" disabled={saving}
+    style={{ padding:'6px 16px', borderRadius:7, border:'1.5px solid #185FA5', background:'#185FA5', color:'white', fontSize:13, fontWeight:600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1 }}
+    onMouseEnter={e => { if (!saving) { e.currentTarget.style.background='#1249a0'; e.currentTarget.style.borderColor='#1249a0'; } }}
+    onMouseLeave={e => { e.currentTarget.style.background='#185FA5'; e.currentTarget.style.borderColor='#185FA5'; }}>
+    {saving ? loadingLabel : label}
+  </button>
+);
+
+// Estilos compactos para formularios en modals
+const labelStyle = { fontSize: 12, fontWeight: 600, marginBottom: 4 };
+const inputStyle = { fontSize: 13, borderRadius: 8, border: '1.5px solid #dde1e7', padding: '7px 10px' };
+
+// Estilos de botones de acción (compartidos)
+const btn30Edit = {
+  style: { display:'inline-flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:7, border:'1.5px solid #bfdbfe', background:'#eff6ff', color:'#185FA5', cursor:'pointer', transition:'all 0.15s' },
+  onMouseEnter: e => { e.currentTarget.style.background='#185FA5'; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor='#185FA5'; },
+  onMouseLeave: e => { e.currentTarget.style.background='#eff6ff'; e.currentTarget.style.color='#185FA5'; e.currentTarget.style.borderColor='#bfdbfe'; },
+};
+const btn30Del = {
+  style: { display:'inline-flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:7, border:'1.5px solid #fecaca', background:'#fef2f2', color:'#dc2626', cursor:'pointer', transition:'all 0.15s' },
+  onMouseEnter: e => { e.currentTarget.style.background='#dc2626'; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor='#dc2626'; },
+  onMouseLeave: e => { e.currentTarget.style.background='#fef2f2'; e.currentTarget.style.color='#dc2626'; e.currentTarget.style.borderColor='#fecaca'; },
+};
+const btnBlueSm = {
+  style: { display:'inline-flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:7, border:'1.5px solid #bfdbfe', background:'#eff6ff', color:'#185FA5', fontSize:11, fontWeight:600, cursor:'pointer', transition:'all 0.15s' },
+  onMouseEnter: e => { e.currentTarget.style.background='#185FA5'; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor='#185FA5'; },
+  onMouseLeave: e => { e.currentTarget.style.background='#eff6ff'; e.currentTarget.style.color='#185FA5'; e.currentTarget.style.borderColor='#bfdbfe'; },
+};
+const btnGreenSm = {
+  style: { display:'inline-flex', alignItems:'center', gap:4, padding:'4px 10px', borderRadius:7, border:'1.5px solid #bbf7d0', background:'#f0fdf4', color:'#166534', fontSize:11, fontWeight:600, cursor:'pointer', transition:'all 0.15s' },
+  onMouseEnter: e => { e.currentTarget.style.background='#166534'; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor='#166534'; },
+  onMouseLeave: e => { e.currentTarget.style.background='#f0fdf4'; e.currentTarget.style.color='#166534'; e.currentTarget.style.borderColor='#bbf7d0'; },
+};
 
 // ── OC Proveedor Section ─────────────────────────────
 const OCProveedorCard = ({ oc, onEdit, onDelete, onAddHES, onEditHES, onDeleteHES }) => {
@@ -53,17 +97,11 @@ const OCProveedorCard = ({ oc, onEdit, onDelete, onAddHES, onEditHES, onDeleteHE
         <div className="d-flex align-items-center gap-2">
           {expanded ? <FaChevronDown size={10} /> : <FaChevronRight size={10} />}
           <span className="fw-semibold" style={{ fontSize: 13, color: '#185FA5' }}>{oc.proveedor ?? '—'}</span>
-          <Badge bg="light" text="dark" style={{ fontSize: 10, border: '1px solid #bfdbfe' }}>
-            {oc.oscsc ?? 'Sin OS'}
-          </Badge>
+          <Badge bg="light" text="dark" style={{ fontSize: 10, border: '1px solid #bfdbfe' }}>{oc.oscsc ?? 'Sin OS'}</Badge>
         </div>
         <div className="d-flex gap-1" onClick={e => e.stopPropagation()}>
-          <Button size="sm" variant="outline-secondary" onClick={() => onEdit(oc)}>
-            <FaPen size={10} />
-          </Button>
-          <Button size="sm" variant="outline-danger" onClick={() => onDelete(oc.id)}>
-            <FaTrash size={10} />
-          </Button>
+          <button onClick={() => onEdit(oc)} title="Editar" {...btn30Edit}><FaPen size={10} /></button>
+          <button onClick={() => onDelete(oc.id)} title="Eliminar" {...btn30Del}><FaTrash size={10} /></button>
         </div>
       </div>
       {expanded && (
@@ -79,39 +117,29 @@ const OCProveedorCard = ({ oc, onEdit, onDelete, onAddHES, onEditHES, onDeleteHE
             <Col md={12}><Campo label="Observación" value={oc.observacion} /></Col>
           </Row>
 
-          {/* HES */}
           <div className="d-flex align-items-center justify-content-between mb-2">
             <p className="text-muted fw-semibold mb-0" style={{ fontSize: 11, textTransform: 'uppercase' }}>
               HES Proveedor ({oc.hes?.length ?? 0})
             </p>
-            <Button size="sm" variant="outline-primary" style={{ fontSize: 11 }} onClick={() => onAddHES(oc.id)}>
-              <FaPlus size={9} className="me-1" /> Agregar HES
-            </Button>
+            <button onClick={() => onAddHES(oc.id)} {...btnBlueSm}>
+              <FaPlus size={9} /> Agregar HES
+            </button>
           </div>
           {oc.hes?.length > 0 ? (
             <table className="table table-sm" style={{ fontSize: 12 }}>
               <thead className="table-light">
-                <tr>
-                  <th>Nro HES</th>
-                  <th>% HES</th>
-                  <th>Estado</th>
-                  <th></th>
-                </tr>
+                <tr><th>Nro HES</th><th>% HES</th><th>Estado</th><th></th></tr>
               </thead>
               <tbody>
                 {oc.hes.map(h => (
                   <tr key={h.id}>
-                    <td className="font-monospace">{h.nroHES ?? '—'}</td>
+                    <td style={{ fontFamily:'monospace' }}>{h.nroHES ?? '—'}</td>
                     <td>{h.pctHES ? `${h.pctHES}%` : '—'}</td>
                     <td><Badge bg={h.estado === 'A' ? 'success' : 'secondary'} style={{ fontSize: 9 }}>{h.estado === 'A' ? 'Activo' : 'Inactivo'}</Badge></td>
                     <td>
                       <div className="d-flex gap-1">
-                        <Button size="sm" variant="outline-secondary" onClick={() => onEditHES(h, oc.id, 'proveedor')}>
-                          <FaPen size={9} />
-                        </Button>
-                        <Button size="sm" variant="outline-danger" onClick={() => onDeleteHES(h.id, 'proveedor')}>
-                          <FaTrash size={9} />
-                        </Button>
+                        <button onClick={() => onEditHES(h, oc.id, 'proveedor')} title="Editar" {...btn30Edit}><FaPen size={9} /></button>
+                        <button onClick={() => onDeleteHES(h.id, 'proveedor')} title="Eliminar" {...btn30Del}><FaTrash size={9} /></button>
                       </div>
                     </td>
                   </tr>
@@ -142,12 +170,8 @@ const OCClienteCard = ({ oc, onEdit, onDelete, onAddHES, onEditHES, onDeleteHES 
           {oc.seRefactura && <Badge bg="success" style={{ fontSize: 9 }}>Refacturable</Badge>}
         </div>
         <div className="d-flex gap-1" onClick={e => e.stopPropagation()}>
-          <Button size="sm" variant="outline-secondary" onClick={() => onEdit(oc)}>
-            <FaPen size={10} />
-          </Button>
-          <Button size="sm" variant="outline-danger" onClick={() => onDelete(oc.id)}>
-            <FaTrash size={10} />
-          </Button>
+          <button onClick={() => onEdit(oc)} title="Editar" {...btn30Edit}><FaPen size={10} /></button>
+          <button onClick={() => onDelete(oc.id)} title="Eliminar" {...btn30Del}><FaTrash size={10} /></button>
         </div>
       </div>
       {expanded && (
@@ -160,43 +184,31 @@ const OCClienteCard = ({ oc, onEdit, onDelete, onAddHES, onEditHES, onDeleteHES 
             <Col md={12}><Campo label="Observación" value={oc.observacion} /></Col>
           </Row>
 
-          {/* HES Cliente */}
           <div className="d-flex align-items-center justify-content-between mb-2">
             <p className="text-muted fw-semibold mb-0" style={{ fontSize: 11, textTransform: 'uppercase' }}>
               HES Cliente ({oc.hes?.length ?? 0})
             </p>
-            <Button size="sm" variant="outline-success" style={{ fontSize: 11 }} onClick={() => onAddHES(oc.id)}>
-              <FaPlus size={9} className="me-1" /> Agregar HES
-            </Button>
+            <button onClick={() => onAddHES(oc.id)} {...btnGreenSm}>
+              <FaPlus size={9} /> Agregar HES
+            </button>
           </div>
           {oc.hes?.length > 0 ? (
             <table className="table table-sm" style={{ fontSize: 12 }}>
               <thead className="table-light">
-                <tr>
-                  <th>Nro HES</th>
-                  <th>Nro Factura SAP</th>
-                  <th>Monto PEN</th>
-                  <th>Monto USD</th>
-                  <th>Estado</th>
-                  <th></th>
-                </tr>
+                <tr><th>Nro HES</th><th>Nro Factura SAP</th><th>Monto PEN</th><th>Monto USD</th><th>Estado</th><th></th></tr>
               </thead>
               <tbody>
                 {oc.hes.map(h => (
                   <tr key={h.id}>
-                    <td className="font-monospace">{h.nroHES ?? '—'}</td>
-                    <td className="font-monospace">{h.nroFacturaSAP ?? '—'}</td>
+                    <td style={{ fontFamily:'monospace' }}>{h.nroHES ?? '—'}</td>
+                    <td style={{ fontFamily:'monospace' }}>{h.nroFacturaSAP ?? '—'}</td>
                     <td>{formatMonto(h.montoFactPEN)}</td>
                     <td>{h.montoFactUSD ? `$ ${Number(h.montoFactUSD).toLocaleString()}` : '—'}</td>
                     <td><Badge bg={h.estado === 'A' ? 'success' : 'secondary'} style={{ fontSize: 9 }}>{h.estado === 'A' ? 'Activo' : 'Inactivo'}</Badge></td>
                     <td>
                       <div className="d-flex gap-1">
-                        <Button size="sm" variant="outline-secondary" onClick={() => onEditHES(h, oc.id, 'cliente')}>
-                          <FaPen size={9} />
-                        </Button>
-                        <Button size="sm" variant="outline-danger" onClick={() => onDeleteHES(h.id, 'cliente')}>
-                          <FaTrash size={9} />
-                        </Button>
+                        <button onClick={() => onEditHES(h, oc.id, 'cliente')} title="Editar" {...btn30Edit}><FaPen size={9} /></button>
+                        <button onClick={() => onDeleteHES(h.id, 'cliente')} title="Eliminar" {...btn30Del}><FaTrash size={9} /></button>
                       </div>
                     </td>
                   </tr>
@@ -210,7 +222,7 @@ const OCClienteCard = ({ oc, onEdit, onDelete, onAddHES, onEditHES, onDeleteHES 
   );
 };
 
-// ── Modal genérico OC ─────────────────────────────
+// ── Modal genérico OC Proveedor ───────────────────────
 const OCProveedorModal = ({ show, onHide, onSave, oc, codProy, saving }) => {
   const { register, handleSubmit, reset } = useForm();
   useEffect(() => {
@@ -231,36 +243,35 @@ const OCProveedorModal = ({ show, onHide, onSave, oc, codProy, saving }) => {
 
   return (
     <Modal show={show} onHide={onHide} centered size="lg">
-      <ModalHeader closeButton><ModalTitle>{oc ? 'Editar OC Proveedor' : 'Nueva OC Proveedor'}</ModalTitle></ModalHeader>
+      <ModalHeader closeButton><ModalTitle style={{ fontSize: 16 }}>{oc ? 'Editar OC Proveedor' : 'Nueva OC Proveedor'}</ModalTitle></ModalHeader>
       <Form onSubmit={handleSubmit(onSubmit)}>
-        <ModalBody>
+        <ModalBody className="px-4 py-3">
           <Row className="g-2">
-            <Col md={6}><Form.Label className="small">Proveedor</Form.Label><Form.Control {...register('proveedor')} placeholder="Nombre del proveedor"/></Col>
-            <Col md={3}><Form.Label className="small">Importe PEN</Form.Label><Form.Control type="number" step="0.01" {...register('importeProvPEN')} placeholder="0.00"/></Col>
-            <Col md={3}><Form.Label className="small">Importe USD</Form.Label><Form.Control type="number" step="0.01" {...register('importeProvUSD')} placeholder="0.00"/></Col>
-            <Col md={4}><Form.Label className="small">Cargado Orden CO</Form.Label><Form.Control {...register('cargadoOrdenCO')} className="font-monospace"/></Col>
-            <Col md={8}><Form.Label className="small">Descripción Orden CO</Form.Label><Form.Control {...register('descripcionOrdenCO')}/></Col>
-            <Col md={4}><Form.Label className="small">Solped CSC</Form.Label><Form.Control {...register('solpedCSC')} className="font-monospace"/></Col>
-            <Col md={4}><Form.Label className="small">OS CSC</Form.Label><Form.Control {...register('oscsc')} className="font-monospace"/></Col>
-            <Col md={4}>
-            <Form.Label className="small">Estado Prov</Form.Label> 
-            <Form.Select {...register('estadoProv')}>
-            <option value="">Seleccionar...</option>
-            <option value="1. Pend. OS Prov.">1. Pend. OS Prov.</option>
-            <option value="2. Envio OS a Prov">2. Envio OS a Prov</option>
-            <option value="3. Envio HES a Prov">3. Envio HES a Prov</option>
-            <option value="4. Pend. Carga a Portal">4. Pend. Carga a Portal</option> 
-            <option value="5. Pend. Registro Contable">5. Pend. Registro Contable</option>
-            <option value="6. Documento registrado">6. Documento registrado</option> 
-            <option value="7. No aplica">7. No aplica</option> 
-            </Form.Select>
+            <Col md={6}><Form.Label style={labelStyle}>Proveedor</Form.Label><Form.Control style={inputStyle} {...register('proveedor')} placeholder="Nombre del proveedor"/></Col>
+            <Col md={3}><Form.Label style={labelStyle}>Importe PEN</Form.Label><Form.Control style={inputStyle} type="number" step="0.01" {...register('importeProvPEN')} placeholder="0.00"/></Col>
+            <Col md={3}><Form.Label style={labelStyle}>Importe USD</Form.Label><Form.Control style={inputStyle} type="number" step="0.01" {...register('importeProvUSD')} placeholder="0.00"/></Col>
+            <Col md={4}><Form.Label style={labelStyle}>Cargado Orden CO</Form.Label><Form.Control style={{ ...inputStyle, fontFamily:'monospace' }} {...register('cargadoOrdenCO')}/></Col>
+            <Col md={8}><Form.Label style={labelStyle}>Descripción Orden CO</Form.Label><Form.Control style={inputStyle} {...register('descripcionOrdenCO')}/></Col>
+            <Col md={4}><Form.Label style={labelStyle}>Solped CSC</Form.Label><Form.Control style={{ ...inputStyle, fontFamily:'monospace' }} {...register('solpedCSC')}/></Col>
+            <Col md={4}><Form.Label style={labelStyle}>OS CSC</Form.Label><Form.Control style={{ ...inputStyle, fontFamily:'monospace' }} {...register('oscsc')}/></Col>
+            <Col md={4}><Form.Label style={labelStyle}>Estado Prov</Form.Label>
+              <Form.Select style={inputStyle} {...register('estadoProv')}>
+                <option value="">Seleccionar...</option>
+                <option value="1. Pend. OS Prov.">1. Pend. OS Prov.</option>
+                <option value="2. Envio OS a Prov">2. Envio OS a Prov</option>
+                <option value="3. Envio HES a Prov">3. Envio HES a Prov</option>
+                <option value="4. Pend. Carga a Portal">4. Pend. Carga a Portal</option>
+                <option value="5. Pend. Registro Contable">5. Pend. Registro Contable</option>
+                <option value="6. Documento registrado">6. Documento registrado</option>
+                <option value="7. No aplica">7. No aplica</option>
+              </Form.Select>
             </Col>
-             <Col md={12}><Form.Label className="small">Observación</Form.Label><Form.Control as="textarea" rows={2} {...register('observacion')}/></Col>
+            <Col md={12}><Form.Label style={labelStyle}>Observación</Form.Label><Form.Control style={{ ...inputStyle, resize:'none' }} as="textarea" rows={2} {...register('observacion')}/></Col>
           </Row>
         </ModalBody>
-        <ModalFooter>
-          <Button variant="outline-secondary" onClick={onHide} disabled={saving}>Cancelar</Button>
-          <Button variant="primary" type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</Button>
+        <ModalFooter className="gap-2">
+          <BtnCancel onClick={onHide} />
+          <BtnSubmit saving={saving} />
         </ModalFooter>
       </Form>
     </Modal>
@@ -287,36 +298,33 @@ const OCClienteModal = ({ show, onHide, onSave, oc, codProy, saving }) => {
 
   return (
     <Modal show={show} onHide={onHide} centered size="lg">
-      <ModalHeader closeButton><ModalTitle>{oc ? 'Editar OC Cliente' : 'Nueva OC Cliente'}</ModalTitle></ModalHeader>
+      <ModalHeader closeButton><ModalTitle style={{ fontSize: 16 }}>{oc ? 'Editar OC Cliente' : 'Nueva OC Cliente'}</ModalTitle></ModalHeader>
       <Form onSubmit={handleSubmit(onSubmit)}>
-        <ModalBody>
+        <ModalBody className="px-4 py-3">
           <Row className="g-2">
-            <Col md={6}><Form.Label className="small">Cód SAP Cliente</Form.Label><Form.Control {...register('codSAPCliente')} className="font-monospace"/></Col>
-            <Col md={6}><Form.Label className="small">Empresa Refacturable</Form.Label><Form.Control {...register('empRefacturable')}/></Col>
-            <Col md={3}><Form.Label className="small">Importe Ref PEN</Form.Label><Form.Control type="number" step="0.01" {...register('importeRefPEN')} placeholder="0.00"/></Col>
-            <Col md={3}><Form.Label className="small">Importe Ref USD</Form.Label><Form.Control type="number" step="0.01" {...register('importeRefUSD')} placeholder="0.00"/></Col>
-            <Col md={3}><Form.Label className="small">OS Cliente CSC</Form.Label><Form.Control {...register('osClienteCSC')} className="font-monospace"/></Col>
-            <Col md={3}>
-            <Form.Label className="small">Estado CSC</Form.Label>
-            <Form.Select {...register('estadoCSC')}>
-            <option value="">Seleccionar...</option>
-            <option value="1. Pend. Gen. OS">1. Pend. Gen. OS</option>
-            <option value="2. Pend. Aprob. OS">2. Pend. Aprob. OS</option>
-            <option value="3. Pend. Gen. HES">3. Pend. Gen. HES</option>
-            <option value="4. Pend. Aprob. HES">4. Pend. Aprob. HES</option>
-            <option value="5. Pend. Facturar">5. Pend. Facturar</option>
-            <option value="6. Facturado">6. Facturado</option>
-            </Form.Select>
+            <Col md={6}><Form.Label style={labelStyle}>Cód SAP Cliente</Form.Label><Form.Control style={{ ...inputStyle, fontFamily:'monospace' }} {...register('codSAPCliente')}/></Col>
+            <Col md={6}><Form.Label style={labelStyle}>Empresa Refacturable</Form.Label><Form.Control style={inputStyle} {...register('empRefacturable')}/></Col>
+            <Col md={3}><Form.Label style={labelStyle}>Importe Ref PEN</Form.Label><Form.Control style={inputStyle} type="number" step="0.01" {...register('importeRefPEN')} placeholder="0.00"/></Col>
+            <Col md={3}><Form.Label style={labelStyle}>Importe Ref USD</Form.Label><Form.Control style={inputStyle} type="number" step="0.01" {...register('importeRefUSD')} placeholder="0.00"/></Col>
+            <Col md={3}><Form.Label style={labelStyle}>OS Cliente CSC</Form.Label><Form.Control style={{ ...inputStyle, fontFamily:'monospace' }} {...register('osClienteCSC')}/></Col>
+            <Col md={3}><Form.Label style={labelStyle}>Estado CSC</Form.Label>
+              <Form.Select style={inputStyle} {...register('estadoCSC')}>
+                <option value="">Seleccionar...</option>
+                <option value="1. Pend. Gen. OS">1. Pend. Gen. OS</option>
+                <option value="2. Pend. Aprob. OS">2. Pend. Aprob. OS</option>
+                <option value="3. Pend. Gen. HES">3. Pend. Gen. HES</option>
+                <option value="4. Pend. Aprob. HES">4. Pend. Aprob. HES</option>
+                <option value="5. Pend. Facturar">5. Pend. Facturar</option>
+                <option value="6. Facturado">6. Facturado</option>
+              </Form.Select>
             </Col>
-            
-            
             <Col md={12}><Form.Check type="switch" label="Se refactura" {...register('seRefactura')}/></Col>
-            <Col md={12}><Form.Label className="small">Observación</Form.Label><Form.Control as="textarea" rows={2} {...register('observacion')}/></Col>
+            <Col md={12}><Form.Label style={labelStyle}>Observación</Form.Label><Form.Control style={{ ...inputStyle, resize:'none' }} as="textarea" rows={2} {...register('observacion')}/></Col>
           </Row>
         </ModalBody>
-        <ModalFooter>
-          <Button variant="outline-secondary" onClick={onHide} disabled={saving}>Cancelar</Button>
-          <Button variant="primary" type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</Button>
+        <ModalFooter className="gap-2">
+          <BtnCancel onClick={onHide} />
+          <BtnSubmit saving={saving} />
         </ModalFooter>
       </Form>
     </Modal>
@@ -345,26 +353,26 @@ const HESModal = ({ show, onHide, onSave, hes, tipo, saving }) => {
 
   return (
     <Modal show={show} onHide={onHide} centered size="lg">
-      <ModalHeader closeButton><ModalTitle>{hes ? 'Editar HES' : 'Nuevo HES'} — {tipo === 'proveedor' ? 'Proveedor' : 'Cliente'}</ModalTitle></ModalHeader>
+      <ModalHeader closeButton><ModalTitle style={{ fontSize: 16 }}>{hes ? 'Editar HES' : 'Nuevo HES'} — {tipo === 'proveedor' ? 'Proveedor' : 'Cliente'}</ModalTitle></ModalHeader>
       <Form onSubmit={handleSubmit(onSubmit)}>
-        <ModalBody>
+        <ModalBody className="px-4 py-3">
           <Row className="g-2">
-            <Col md={6}><Form.Label className="small">Nro HES</Form.Label><Form.Control {...register('nroHES')} className="font-monospace" placeholder="Ej: HES-001"/></Col>
+            <Col md={6}><Form.Label style={labelStyle}>Nro HES</Form.Label><Form.Control style={{ ...inputStyle, fontFamily:'monospace' }} {...register('nroHES')} placeholder="Ej: HES-001"/></Col>
             {tipo === 'proveedor' && (
-              <Col md={6}><Form.Label className="small">% HES</Form.Label><Form.Control type="number" step="0.01" {...register('pctHES')} placeholder="0.00"/></Col>
+              <Col md={6}><Form.Label style={labelStyle}>% HES</Form.Label><Form.Control style={inputStyle} type="number" step="0.01" {...register('pctHES')} placeholder="0.00"/></Col>
             )}
             {tipo === 'cliente' && (
               <>
-                <Col md={6}><Form.Label className="small">Nro Factura SAP</Form.Label><Form.Control {...register('nroFacturaSAP')} className="font-monospace"/></Col>
-                <Col md={6}><Form.Label className="small">Monto Fact PEN</Form.Label><Form.Control type="number" step="0.01" {...register('montoFactPEN')} placeholder="0.00"/></Col>
-                <Col md={6}><Form.Label className="small">Monto Fact USD</Form.Label><Form.Control type="number" step="0.01" {...register('montoFactUSD')} placeholder="0.00"/></Col>
+                <Col md={6}><Form.Label style={labelStyle}>Nro Factura SAP</Form.Label><Form.Control style={{ ...inputStyle, fontFamily:'monospace' }} {...register('nroFacturaSAP')}/></Col>
+                <Col md={6}><Form.Label style={labelStyle}>Monto Fact PEN</Form.Label><Form.Control style={inputStyle} type="number" step="0.01" {...register('montoFactPEN')} placeholder="0.00"/></Col>
+                <Col md={6}><Form.Label style={labelStyle}>Monto Fact USD</Form.Label><Form.Control style={inputStyle} type="number" step="0.01" {...register('montoFactUSD')} placeholder="0.00"/></Col>
               </>
             )}
           </Row>
         </ModalBody>
-        <ModalFooter>
-          <Button variant="outline-secondary" onClick={onHide} disabled={saving}>Cancelar</Button>
-          <Button variant="primary" type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</Button>
+        <ModalFooter className="gap-2">
+          <BtnCancel onClick={onHide} />
+          <BtnSubmit saving={saving} />
         </ModalFooter>
       </Form>
     </Modal>
@@ -381,7 +389,6 @@ const DetalleProyecto = () => {
   const [saving, setSaving]     = useState(false);
   const [activeTab, setActiveTab] = useState('general');
 
-  // Modals
   const [modalOCProv, setModalOCProv]     = useState({ show: false, item: null });
   const [modalOCCli, setModalOCCli]       = useState({ show: false, item: null });
   const [modalHES, setModalHES]           = useState({ show: false, item: null, idOC: null, tipo: null });
@@ -403,7 +410,6 @@ const DetalleProyecto = () => {
 
   useEffect(() => { cargar(); }, [id]);
 
-  // ── OC Proveedor ──
   const handleSaveOCProv = async (payload) => {
     try {
       setSaving(true);
@@ -417,14 +423,10 @@ const DetalleProyecto = () => {
   };
 
   const handleDeleteOCProv = async (ocId) => {
-    try {
-      await proyectoOCProveedorService.eliminar(ocId);
-      toast.success('OC Proveedor eliminada');
-      await cargar();
-    } catch (err) { toast.error(err.message); }
+    try { await proyectoOCProveedorService.eliminar(ocId); toast.success('OC Proveedor eliminada'); await cargar(); }
+    catch (err) { toast.error(err.message); }
   };
 
-  // ── OC Cliente ──
   const handleSaveOCCli = async (payload) => {
     try {
       setSaving(true);
@@ -438,14 +440,10 @@ const DetalleProyecto = () => {
   };
 
   const handleDeleteOCCli = async (ocId) => {
-    try {
-      await proyectoOCClienteService.eliminar(ocId);
-      toast.success('OC Cliente eliminada');
-      await cargar();
-    } catch (err) { toast.error(err.message); }
+    try { await proyectoOCClienteService.eliminar(ocId); toast.success('OC Cliente eliminada'); await cargar(); }
+    catch (err) { toast.error(err.message); }
   };
 
-  // ── HES ──
   const handleSaveHES = async (payload) => {
     try {
       setSaving(true);
@@ -491,33 +489,28 @@ const DetalleProyecto = () => {
       });
     }, [modalCronograma]);
 
-const onSubmit = async (data) => {
-  try {
-    setSaving(true);
-    const payload = {
-      fechaEntrega:     data.fechaEntrega     || null,
-      fRequerimiento:   data.fRequerimiento   || null,
-      fEntregaFinal:    data.fEntregaFinal    || null,
-      fCotizacion:      data.fCotizacion      || null,
-      fAutorizado:      data.fAutorizado      || null,
-      fIniConstruccion: data.fIniConstruccion || null,
-      fFinConstruccion: data.fFinConstruccion || null,
-      fIniValUsu:       data.fIniValUsu       || null,
-      fCierre:          data.fCierre          || null,
-      usuarioModificacion: 'ADMIN',
+    const onSubmit = async (data) => {
+      try {
+        setSaving(true);
+        const payload = {
+          fechaEntrega: data.fechaEntrega || null, fRequerimiento: data.fRequerimiento || null,
+          fEntregaFinal: data.fEntregaFinal || null, fCotizacion: data.fCotizacion || null,
+          fAutorizado: data.fAutorizado || null, fIniConstruccion: data.fIniConstruccion || null,
+          fFinConstruccion: data.fFinConstruccion || null, fIniValUsu: data.fIniValUsu || null,
+          fCierre: data.fCierre || null, usuarioModificacion: 'ADMIN',
+        };
+        await proyectosService.updateCronograma(id, payload);
+        toast.success('Cronograma actualizado');
+        setModalCronograma(false);
+        await cargar();
+      } catch (err) { toast.error(err.message); }
+      finally { setSaving(false); }
     };
-    await proyectosService.updateCronograma(id, payload);
-    toast.success('Cronograma actualizado');
-    setModalCronograma(false);
-    await cargar();
-  } catch (err) { toast.error(err.message); }
-  finally { setSaving(false); }
-};
     return (
       <Modal show={modalCronograma} onHide={() => setModalCronograma(false)} centered size="lg">
-        <ModalHeader closeButton><ModalTitle>Cronograma — {id}</ModalTitle></ModalHeader>
+        <ModalHeader closeButton><ModalTitle style={{ fontSize: 16 }}>Cronograma — {id}</ModalTitle></ModalHeader>
         <Form onSubmit={handleSubmit(onSubmit)}>
-          <ModalBody>
+          <ModalBody className="px-4 py-3">
             <Row className="g-2">
               {[
                 { name: 'fechaEntrega', label: 'Fecha entrega' },
@@ -531,15 +524,15 @@ const onSubmit = async (data) => {
                 { name: 'fCierre', label: 'F. Cierre' },
               ].map(f => (
                 <Col key={f.name} md={4}>
-                  <Form.Label className="small">{f.label}</Form.Label>
-                  <Form.Control type="date" {...register(f.name)} />
+                  <Form.Label style={labelStyle}>{f.label}</Form.Label>
+                  <Form.Control style={inputStyle} type="date" {...register(f.name)} />
                 </Col>
               ))}
             </Row>
           </ModalBody>
-          <ModalFooter>
-            <Button variant="outline-secondary" onClick={() => setModalCronograma(false)} disabled={saving}>Cancelar</Button>
-            <Button variant="primary" type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar cronograma'}</Button>
+          <ModalFooter className="gap-2">
+            <BtnCancel onClick={() => setModalCronograma(false)} />
+            <BtnSubmit saving={saving} label="Guardar cronograma" />
           </ModalFooter>
         </Form>
       </Modal>
@@ -560,9 +553,9 @@ const onSubmit = async (data) => {
         setSaving(true);
         await proyectoHorasService.updateHoras(id, {
           horasProyecto: data.horasProyecto ? parseFloat(data.horasProyecto) : null,
-          horasTIC:      data.horasTIC      ? parseFloat(data.horasTIC)      : null,
-          horasJP:       data.horasJP       ? parseFloat(data.horasJP)       : null,
-          horasProv:     data.horasProv     ? parseFloat(data.horasProv)     : null,
+          horasTIC: data.horasTIC ? parseFloat(data.horasTIC) : null,
+          horasJP: data.horasJP ? parseFloat(data.horasJP) : null,
+          horasProv: data.horasProv ? parseFloat(data.horasProv) : null,
         });
         toast.success('Horas actualizadas');
         setModalHoras(false);
@@ -572,20 +565,20 @@ const onSubmit = async (data) => {
     };
 
     return (
-      <Modal show={modalHoras} onHide={() => setModalHoras(false)}  centered size="lg">
-        <ModalHeader closeButton><ModalTitle>Horas del proyecto</ModalTitle></ModalHeader>
+      <Modal show={modalHoras} onHide={() => setModalHoras(false)} centered size="lg">
+        <ModalHeader closeButton><ModalTitle style={{ fontSize: 16 }}>Horas del proyecto</ModalTitle></ModalHeader>
         <Form onSubmit={handleSubmit(onSubmit)}>
-          <ModalBody>
+          <ModalBody className="px-4 py-3">
             <Row className="g-2">
-              <Col md={6}><Form.Label className="small">Horas proyecto</Form.Label><Form.Control type="number" step="0.5" {...register('horasProyecto')} placeholder="0"/></Col>
-              <Col md={6}><Form.Label className="small">Horas TIC</Form.Label><Form.Control type="number" step="0.5" {...register('horasTIC')} placeholder="0"/></Col>
-              <Col md={6}><Form.Label className="small">Horas JP</Form.Label><Form.Control type="number" step="0.5" {...register('horasJP')} placeholder="0"/></Col>
-              <Col md={6}><Form.Label className="small">Horas Prov</Form.Label><Form.Control type="number" step="0.5" {...register('horasProv')} placeholder="0"/></Col>
+              <Col md={6}><Form.Label style={labelStyle}>Horas proyecto</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasProyecto')} placeholder="0"/></Col>
+              <Col md={6}><Form.Label style={labelStyle}>Horas TIC</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasTIC')} placeholder="0"/></Col>
+              <Col md={6}><Form.Label style={labelStyle}>Horas JP</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasJP')} placeholder="0"/></Col>
+              <Col md={6}><Form.Label style={labelStyle}>Horas Prov</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasProv')} placeholder="0"/></Col>
             </Row>
           </ModalBody>
-          <ModalFooter>
-            <Button variant="outline-secondary" onClick={() => setModalHoras(false)} disabled={saving}>Cancelar</Button>
-            <Button variant="primary" type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</Button>
+          <ModalFooter className="gap-2">
+            <BtnCancel onClick={() => setModalHoras(false)} />
+            <BtnSubmit saving={saving} />
           </ModalFooter>
         </Form>
       </Modal>
@@ -615,24 +608,24 @@ const onSubmit = async (data) => {
 
     return (
       <Modal show={modalHorasFuncional.show} onHide={() => setModalHorasFuncional({ show: false, item: null })} centered size="lg">
-        <ModalHeader closeButton><ModalTitle>{item ? 'Editar' : 'Nuevo'} registro mensual</ModalTitle></ModalHeader>
+        <ModalHeader closeButton><ModalTitle style={{ fontSize: 16 }}>{item ? 'Editar' : 'Nuevo'} registro mensual</ModalTitle></ModalHeader>
         <Form onSubmit={handleSubmit(onSubmit)}>
-          <ModalBody>
+          <ModalBody className="px-4 py-3">
             <Row className="g-2">
-              <Col md={4}><Form.Label className="small">Año</Form.Label><Form.Control type="number" {...register('anio')} disabled={!!item}/></Col>
-              <Col md={4}><Form.Label className="small">Mes</Form.Label>
-                <Form.Select {...register('mes')} disabled={!!item}>
-                  {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map((m,i) => (
+              <Col md={4}><Form.Label style={labelStyle}>Año</Form.Label><Form.Control style={inputStyle} type="number" {...register('anio')} disabled={!!item}/></Col>
+              <Col md={4}><Form.Label style={labelStyle}>Mes</Form.Label>
+                <Form.Select style={inputStyle} {...register('mes')} disabled={!!item}>
+                  {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map((m, i) => (
                     <option key={i+1} value={i+1}>{m}</option>
                   ))}
                 </Form.Select>
               </Col>
-              <Col md={4}><Form.Label className="small">Horas TIC mes</Form.Label><Form.Control type="number" step="0.5" {...register('horasTicMes')} placeholder="0"/></Col>
+              <Col md={4}><Form.Label style={labelStyle}>Horas TIC mes</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasTicMes')} placeholder="0"/></Col>
             </Row>
           </ModalBody>
-          <ModalFooter>
-            <Button variant="outline-secondary" onClick={() => setModalHorasFuncional({ show: false, item: null })} disabled={saving}>Cancelar</Button>
-            <Button variant="primary" type="submit" disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</Button>
+          <ModalFooter className="gap-2">
+            <BtnCancel onClick={() => setModalHorasFuncional({ show: false, item: null })} />
+            <BtnSubmit saving={saving} />
           </ModalFooter>
         </Form>
       </Modal>
@@ -649,7 +642,12 @@ const onSubmit = async (data) => {
     <div className="content-wrapper">
       <div className="main-content text-center py-5">
         <p className="text-muted">Proyecto no encontrado.</p>
-        <Button variant="outline-primary" onClick={() => navigate('/proyectos')}>Volver</Button>
+        <button onClick={() => navigate('/proyectos')}
+          style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'5px 14px', borderRadius:7, border:'1.5px solid #bfdbfe', background:'#eff6ff', color:'#185FA5', fontSize:13, fontWeight:500, cursor:'pointer' }}
+          onMouseEnter={e => { e.currentTarget.style.background='#185FA5'; e.currentTarget.style.color='white'; }}
+          onMouseLeave={e => { e.currentTarget.style.background='#eff6ff'; e.currentTarget.style.color='#185FA5'; }}>
+          Volver
+        </button>
       </div>
     </div>
   );
@@ -658,28 +656,24 @@ const onSubmit = async (data) => {
 
   return (
     <div className="content-wrapper">
-      <PageBreadcrumb
-        title={proyecto.codProy}
-        subTitle1="Proyectos"
-        subTitle2={proyecto.codProy}
-        subText={proyecto.nombreRequerimiento}
-      />
+      <PageBreadcrumb title={proyecto.codProy} subTitle1="Proyectos" subTitle2={proyecto.codProy} subText={proyecto.nombreRequerimiento} />
 
       <div className="main-content">
 
         {/* Header */}
         <div className="d-flex align-items-center gap-3 mb-4">
-          <Button variant="outline-secondary" size="sm" onClick={() => navigate('/proyectos')}>
-            <FaArrowLeft size={11} className="me-1" /> Volver
-          </Button>
+          <button onClick={() => navigate('/proyectos')}
+            style={{ display:'inline-flex', alignItems:'center', gap:5, padding:'5px 12px', borderRadius:7, border:'1.5px solid #d1d5db', background:'#f9fafb', color:'#374151', fontSize:13, fontWeight:500, cursor:'pointer', transition:'all 0.15s' }}
+            onMouseEnter={e => { e.currentTarget.style.background='#374151'; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor='#374151'; }}
+            onMouseLeave={e => { e.currentTarget.style.background='#f9fafb'; e.currentTarget.style.color='#374151'; e.currentTarget.style.borderColor='#d1d5db'; }}>
+            <FaArrowLeft size={11} /> Volver
+          </button>
           <div className="flex-grow-1">
             <div className="d-flex align-items-center gap-2 flex-wrap">
               <h5 className="mb-0 fw-bold">{proyecto.nombreRequerimiento}</h5>
               <EstadoBadge estado={proyecto.estado} />
               {proyecto.estadoInterno && (
-                <Badge bg="light" text="dark" style={{ border: '1px solid #d1d5db', fontSize: 10 }}>
-                  {proyecto.estadoInterno}
-                </Badge>
+                <Badge bg="light" text="dark" style={{ border: '1px solid #d1d5db', fontSize: 10 }}>{proyecto.estadoInterno}</Badge>
               )}
             </div>
             <div className="d-flex gap-3 mt-1" style={{ fontSize: 12 }}>
@@ -691,7 +685,6 @@ const onSubmit = async (data) => {
           </div>
         </div>
 
-        {/* Tabs */}
         <Tabs activeKey={activeTab} onSelect={setActiveTab} className="mb-4">
 
           {/* ── DATOS GENERALES ── */}
@@ -718,24 +711,24 @@ const onSubmit = async (data) => {
                 <div className="card border-0 shadow-sm">
                   <div className="card-header py-2 d-flex align-items-center justify-content-between">
                     <span className="fw-semibold small">Cronograma</span>
-                    <Button size="sm" variant="outline-primary" style={{ fontSize: 11 }} onClick={() => setModalCronograma(true)}>
-                      <FaPen size={10} className="me-1" /> Editar
-                    </Button>
+                    <button onClick={() => setModalCronograma(true)} {...btnBlueSm}>
+                      <FaPen size={10} /> Editar
+                    </button>
                   </div>
                   <div className="card-body">
                     {[
-                      { label: 'F. Requerimiento', value: cronograma?.fRequerimiento },
-                      { label: 'F. Entrega final', value: cronograma?.fEntregaFinal },
-                      { label: 'F. Cotización', value: cronograma?.fCotizacion },
-                      { label: 'F. Autorizado', value: cronograma?.fAutorizado },
+                      { label: 'F. Requerimiento',  value: cronograma?.fRequerimiento },
+                      { label: 'F. Entrega final',  value: cronograma?.fEntregaFinal },
+                      { label: 'F. Cotización',     value: cronograma?.fCotizacion },
+                      { label: 'F. Autorizado',     value: cronograma?.fAutorizado },
                       { label: 'F. Ini. Construcción', value: cronograma?.fIniConstruccion },
-                      { label: 'F. Fin Construcción', value: cronograma?.fFinConstruccion },
+                      { label: 'F. Fin Construcción',  value: cronograma?.fFinConstruccion },
                       { label: 'F. Ini. Val. Usuario', value: cronograma?.fIniValUsu },
-                      { label: 'F. Cierre', value: cronograma?.fCierre },
+                      { label: 'F. Cierre',         value: cronograma?.fCierre },
                     ].map(f => (
                       <div key={f.label} className="d-flex justify-content-between py-1" style={{ borderBottom: '0.5px solid var(--color-border-tertiary)', fontSize: 12 }}>
                         <span className="text-muted">{f.label}</span>
-                        <span className="fw-semibold font-monospace">{formatFecha(f.value)}</span>
+                        <span className="fw-semibold" style={{ fontFamily:'monospace' }}>{formatFecha(f.value)}</span>
                       </div>
                     ))}
                   </div>
@@ -747,9 +740,9 @@ const onSubmit = async (data) => {
           {/* ── OC PROVEEDOR ── */}
           <Tab eventKey="ocprov" title={`OC Proveedor (${ocProveedores?.length ?? 0})`}>
             <div className="d-flex justify-content-end mb-3">
-              <Button variant="primary" size="sm" onClick={() => setModalOCProv({ show: true, item: null })}>
-                <FaPlus size={11} className="me-1" /> Nueva OC Proveedor
-              </Button>
+              <button onClick={() => setModalOCProv({ show: true, item: null })} {...btnBlueSm}>
+                <FaPlus size={11} /> Nueva OC Proveedor
+              </button>
             </div>
             {ocProveedores?.length === 0 ? (
               <p className="text-muted text-center py-4">Sin OC de proveedor registradas.</p>
@@ -767,9 +760,9 @@ const onSubmit = async (data) => {
           {/* ── OC CLIENTE ── */}
           <Tab eventKey="occli" title={`OC Cliente (${ocClientes?.length ?? 0})`}>
             <div className="d-flex justify-content-end mb-3">
-              <Button variant="success" size="sm" onClick={() => setModalOCCli({ show: true, item: null })}>
-                <FaPlus size={11} className="me-1" /> Nueva OC Cliente
-              </Button>
+              <button onClick={() => setModalOCCli({ show: true, item: null })} {...btnGreenSm}>
+                <FaPlus size={11} /> Nueva OC Cliente
+              </button>
             </div>
             {ocClientes?.length === 0 ? (
               <p className="text-muted text-center py-4">Sin OC de cliente registradas.</p>
@@ -791,16 +784,16 @@ const onSubmit = async (data) => {
                 <div className="card border-0 shadow-sm">
                   <div className="card-header py-2 d-flex align-items-center justify-content-between">
                     <span className="fw-semibold small">Horas totales del proyecto</span>
-                    <Button size="sm" variant="outline-primary" style={{ fontSize: 11 }} onClick={() => setModalHoras(true)}>
-                      <FaPen size={10} className="me-1" /> Editar
-                    </Button>
+                    <button onClick={() => setModalHoras(true)} {...btnBlueSm}>
+                      <FaPen size={10} /> Editar
+                    </button>
                   </div>
                   <div className="card-body">
                     {[
                       { label: 'Horas proyecto', value: horas?.horasProyecto },
-                      { label: 'Horas TIC', value: horas?.horasTIC },
-                      { label: 'Horas JP', value: horas?.horasJP },
-                      { label: 'Horas Prov', value: horas?.horasProv },
+                      { label: 'Horas TIC',      value: horas?.horasTIC },
+                      { label: 'Horas JP',        value: horas?.horasJP },
+                      { label: 'Horas Prov',      value: horas?.horasProv },
                     ].map(h => (
                       <div key={h.label} className="d-flex justify-content-between py-2" style={{ borderBottom: '0.5px solid var(--color-border-tertiary)', fontSize: 13 }}>
                         <span className="text-muted">{h.label}</span>
@@ -814,10 +807,9 @@ const onSubmit = async (data) => {
                 <div className="card border-0 shadow-sm">
                   <div className="card-header py-2 d-flex align-items-center justify-content-between">
                     <span className="fw-semibold small">Horas TIC por mes</span>
-                    <Button size="sm" variant="outline-primary" style={{ fontSize: 11 }}
-                      onClick={() => setModalHorasFuncional({ show: true, item: null })}>
-                      <FaPlus size={10} className="me-1" /> Agregar mes
-                    </Button>
+                    <button onClick={() => setModalHorasFuncional({ show: true, item: null })} {...btnBlueSm}>
+                      <FaPlus size={10} /> Agregar mes
+                    </button>
                   </div>
                   <div className="card-body p-0">
                     {horasFuncional?.length === 0 ? (
@@ -830,23 +822,20 @@ const onSubmit = async (data) => {
                         <tbody>
                           {horasFuncional?.map(h => (
                             <tr key={h.id}>
-                              <td className="font-monospace">{h.anio}</td>
+                              <td style={{ fontFamily:'monospace' }}>{h.anio}</td>
                               <td>{['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][h.mes]}</td>
                               <td><strong>{h.horasTicMes ?? '—'}</strong></td>
                               <td>
                                 <div className="d-flex gap-1">
-                                  <Button size="sm" variant="outline-secondary"
-                                    onClick={() => setModalHorasFuncional({ show: true, item: h })}>
-                                    <FaPen size={9} />
-                                  </Button>
-                                  <Button size="sm" variant="outline-danger"
+                                  <button onClick={() => setModalHorasFuncional({ show: true, item: h })} title="Editar" {...btn30Edit}><FaPen size={9} /></button>
+                                  <button title="Eliminar" {...btn30Del}
                                     onClick={async () => {
                                       await proyectoHorasService.deleteHorasFuncional(h.id);
                                       toast.success('Registro eliminado');
                                       await cargar();
                                     }}>
                                     <FaTrash size={9} />
-                                  </Button>
+                                  </button>
                                 </div>
                               </td>
                             </tr>

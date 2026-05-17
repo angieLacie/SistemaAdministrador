@@ -53,6 +53,11 @@ const GestionEmpleados    = lazy(() => import('@/views/empleados'));
 // ── Notificaciones ─────────────────────────────────────
 const GestionNotificaciones = lazy(() => import('@/views/notificaciones'));
 
+// ── Sistemas Tienda ────────────────────────────────────
+const SistemasTienda   = lazy(() => import('@/views/sistemasTienda'));
+const SistemasCentral    = lazy(() => import('@/views/sistemasCentral'));
+const GestionIndicadores = lazy(() => import('@/views/indicadores'));
+
 // ── Accesos ────────────────────────────────────────────
 const AccesosPerfil  = lazy(() => import('@/views/accesos/perfil'));
 const GestionAccesos = lazy(() => import('@/views/accesos/gestion'));
@@ -160,7 +165,10 @@ const appPages = [{
     { path: '/accesos/perfil',  element: G(<AccesosPerfil />) },
     { path: '/accesos/gestion', element: G(<GestionAccesos />) },
     { path: '/parametros/llave', element: G(<ParametrosView />) },
-    { path: '/notificaciones', element: G(<GestionNotificaciones />) },
+    { path: '/notificaciones',   element: G(<GestionNotificaciones />) },
+    { path: '/sistemas-tienda',   element: G(<SistemasTienda />) },
+    { path: '/sistemas-central',   element: G(<SistemasCentral />) },
+    { path: '/monitor/indicadores', element: G(<GestionIndicadores />) },
     // Monitor
     { path: '/monitor/precio-cero', element: G(<DashboardPrecioCero />) },
     { path: '/monitor/interfaz',    element: G(<DashboardInterfaz />) },

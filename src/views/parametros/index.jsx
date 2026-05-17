@@ -8,10 +8,10 @@ import {
   useReactTable,
   getExpandedRowModel,
 } from '@tanstack/react-table';
-import { Row, Col, Button, Badge, Spinner } from 'react-bootstrap';
+import { Row, Col, Badge, Spinner } from 'react-bootstrap';
 import SearchableSelect from '@/components/SearchableSelect';
 import { toast } from 'react-toastify';
-import { FaChevronRight, FaChevronDown, FaPlus, FaPen, FaTrash, FaPowerOff } from 'react-icons/fa6';
+import { FaChevronRight, FaChevronDown, FaPlus, FaPen, FaTrash, FaPowerOff, FaXmark } from 'react-icons/fa6';
 
 import PageBreadcrumb from '@/components/PageBreadcrumb';
 import DataTable from '@/components/table/DataTable';
@@ -165,10 +165,10 @@ const Parametros = () => {
       id: 'expander',
       header: () => null,
       cell: ({ row }) => (
-        <Button size="sm" variant="link" className="p-0 text-primary"
-          onClick={() => row.toggleExpanded()}>
+        <button onClick={() => row.toggleExpanded()}
+          style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:'2px 4px', display:'flex', alignItems:'center' }}>
           {row.getIsExpanded() ? <FaChevronDown size={12} /> : <FaChevronRight size={12} />}
-        </Button>
+        </button>
       ),
     }),
     columnHelper.accessor('parametroCodigo', {
@@ -210,18 +210,18 @@ const Parametros = () => {
       header: 'Acciones',
       cell: ({ row }) => (
         <div className="d-flex gap-1">
-          <Button size="sm" variant="outline-secondary" title="Editar"
-            onClick={() => { setSelected(row.original); setShowModal(true); }}>
-            <FaPen size={12} />
-          </Button>
-          <Button size="sm" variant="outline-warning" title="Cambiar estado"
-            onClick={() => { setSelected(row.original); setShowToggleModal(true); }}>
-            <FaPowerOff size={12} />
-          </Button>
-          <Button size="sm" variant="outline-danger" title="Eliminar"
-            onClick={() => { setSelected(row.original); setShowDeleteModal(true); }}>
-            <FaTrash size={12} />
-          </Button>
+          {[
+            { icon: <FaPen size={13}/>, title: 'Editar', color: '#185FA5', bg: '#eff6ff', bd: '#bfdbfe', onClick: () => { setSelected(row.original); setShowModal(true); } },
+            { icon: <FaPowerOff size={13}/>, title: 'Cambiar estado', color: '#d97706', bg: '#fffbeb', bd: '#fde68a', onClick: () => { setSelected(row.original); setShowToggleModal(true); } },
+            { icon: <FaTrash size={13}/>, title: 'Eliminar', color: '#dc2626', bg: '#fef2f2', bd: '#fecaca', onClick: () => { setSelected(row.original); setShowDeleteModal(true); } },
+          ].map(({ icon, title, color, bg, bd, onClick }) => (
+            <button key={title} onClick={onClick} title={title}
+              style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:`1.5px solid ${bd}`, background:bg, color, cursor:'pointer', transition:'all 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background=color; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor=color; }}
+              onMouseLeave={e => { e.currentTarget.style.background=bg; e.currentTarget.style.color=color; e.currentTarget.style.borderColor=bd; }}>
+              {icon}
+            </button>
+          ))}
         </div>
       ),
     }),
@@ -388,20 +388,21 @@ const table = useReactTable({
           <div className="card-body py-2 px-3">
             <Row className="g-2 align-items-center">
               <Col xs={12} md={3}>
-                <div className="input-group input-group-sm">
-                  <span className="input-group-text bg-white border-end-0">
-                    <i className="ri-search-line text-muted"></i>
-                  </span>
-                  <input
-                    type="text"
-                    className="form-control border-start-0"
+                <div style={{ position: 'relative' }}>
+                  <i className="ri-search-line" style={{ position:'absolute', left:10, top:'50%', transform:'translateY(-50%)', color:'#9ca3af', fontSize:14 }} />
+                  <input type="text" value={globalFilter ?? ''}
+                    onChange={e => setGlobalFilter(e.target.value)}
                     placeholder="Buscar código o nombre..."
-                    value={searchText}
-                    onChange={(e) => { setSearchText(e.target.value); setGlobalFilter(e.target.value); }}
+                    autoComplete="off"
+                    style={{ width:'100%', padding:'7px 36px 7px 32px', border:'1.5px solid #dde1e7', borderRadius:8, fontSize:13, outline:'none', background:'white' }}
+                    onFocus={e => e.target.style.borderColor='#185FA5'}
+                    onBlur={e  => e.target.style.borderColor='#dde1e7'}
                   />
-                  {searchText && (
-                    <button className="btn btn-outline-secondary" type="button"
-                      onClick={() => { setSearchText(''); setGlobalFilter(''); }}>✕</button>
+                  {globalFilter && (
+                    <button onClick={() => setGlobalFilter('')}
+                      style={{ position:'absolute', right:8, top:'50%', transform:'translateY(-50%)', background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:2, display:'flex' }}>
+                      <FaXmark size={12} />
+                    </button>
                   )}
                 </div>
               </Col>
@@ -414,17 +415,32 @@ const table = useReactTable({
                 />
               </Col>
               <Col xs="auto" className="ms-auto d-flex gap-2">
-                <Button variant={showFilters ? 'primary' : 'outline-secondary'} size="sm"
-                  onClick={() => setShowFilters(!showFilters)}>
-                  <i className="ri-filter-3-line me-1"></i> Filtros
-                  {filtrosActivos > 0 && <Badge bg="light" text="dark" className="ms-2">{filtrosActivos}</Badge>}
-                </Button>
-                <Button variant="outline-primary" size="sm" onClick={cargar}>
-                  <i className="ri-refresh-line me-1"></i> Aplicar
-                </Button>
-                <Button variant="primary" size="sm" onClick={() => { setSelected(null); setShowModal(true); }}>
-                  <FaPlus size={12} className="me-1" /> Nuevo
-                </Button>
+                <button onClick={() => setShowFilters(!showFilters)}
+                  style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 12px', borderRadius:7, fontSize:13, fontWeight:600, cursor:'pointer', transition:'all 0.15s',
+                    border: showFilters ? '1.5px solid #185FA5' : '1.5px solid #d1d5db',
+                    background: showFilters ? '#185FA5' : 'white',
+                    color: showFilters ? 'white' : '#374151',
+                  }}>
+                  <i className="ri-filter-3-line" />
+                  Filtros
+                  {filtrosActivos > 0 && (
+                    <span style={{ background: showFilters ? 'rgba(255,255,255,0.25)' : '#dbeafe', color: showFilters ? 'white' : '#1e40af', borderRadius:10, padding:'1px 7px', fontSize:11 }}>
+                      {filtrosActivos}
+                    </span>
+                  )}
+                </button>
+                <button onClick={cargar}
+                  style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 12px', borderRadius:7, border:'1.5px solid #bfdbfe', background:'#eff6ff', color:'#185FA5', fontSize:13, fontWeight:600, cursor:'pointer', transition:'all 0.15s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background='#185FA5'; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor='#185FA5'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background='#eff6ff'; e.currentTarget.style.color='#185FA5'; e.currentTarget.style.borderColor='#bfdbfe'; }}>
+                  <i className="ri-refresh-line" /> Aplicar
+                </button>
+                <button onClick={() => { setSelected(null); setShowModal(true); }}
+                  style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 14px', borderRadius:7, border:'1.5px solid #185FA5', background:'#eff6ff', color:'#185FA5', fontSize:13, fontWeight:600, cursor:'pointer', transition:'all 0.15s' }}
+                  onMouseEnter={e => { e.currentTarget.style.background='#185FA5'; e.currentTarget.style.color='white'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background='#eff6ff'; e.currentTarget.style.color='#185FA5'; }}>
+                  <FaPlus size={12} /> Nuevo
+                </button>
               </Col>
             </Row>
 
@@ -471,10 +487,11 @@ const table = useReactTable({
                   </Col>
                   <Col xs={12}>
                     <div className="d-flex justify-content-end mt-2">
-                      <Button variant="link" size="sm" className="text-muted"
-                        onClick={() => setFiltros({ ...filtros, empresa: '', tienda: '', estado: '', valor: '', codigo: '' })}>
+                      <button type="button"
+                        onClick={() => setFiltros({ ...filtros, empresa: '', tienda: '', estado: '', valor: '', codigo: '' })}
+                        style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', fontSize:12, fontWeight:600, padding:'4px 8px' }}>
                         Limpiar filtros
-                      </Button>
+                      </button>
                     </div>
                   </Col>
                 </Row>

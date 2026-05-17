@@ -10,7 +10,7 @@ import {
 import { Row, Col, Button, Badge, Spinner } from 'react-bootstrap';
 import SearchableSelect from '@/components/SearchableSelect';
 import { toast } from 'react-toastify';
-import { FaPlus, FaPen, FaTrash, FaKey, FaLock, FaLockOpen } from 'react-icons/fa6';
+import { FaPlus, FaPen, FaTrash, FaKey, FaLock, FaLockOpen, FaXmark } from 'react-icons/fa6';
 
 import PageBreadcrumb from '@/components/PageBreadcrumb';
 import DataTable from '@/components/table/DataTable';
@@ -38,7 +38,6 @@ const GestionUsuarios = () => {
   const [perfiles, setPerfiles]   = useState([]);
   const [loading, setLoading]     = useState(true);
   const [globalFilter, setGlobalFilter] = useState('');
-  const [searchText, setSearchText]     = useState('');
   const [filterEstado, setFilterEstado] = useState('');
   const [pagination, setPagination]     = useState({ pageIndex: 0, pageSize: 10 });
 
@@ -127,15 +126,15 @@ const handleCambiarPerfil = async (payload) => {
   const columns = [
     columnHelper.accessor('usuarioId', {
       header: 'Usuario',
-      cell: ({ getValue }) => <span className="fw-semibold font-monospace" style={{ color: '#185FA5' }}>{getValue()}</span>,
+      cell: ({ getValue }) => <span className="fw-bold" style={{ color: '#185FA5', fontSize: 13 }}>{getValue()}</span>,
     }),
     columnHelper.accessor('nombreUsuario', {
       header: 'Nombre',
-      cell: ({ getValue }) => getValue() ?? '—',
+      cell: ({ getValue }) => <span className="fw-semibold" style={{ fontSize: 13 }}>{getValue() ?? '—'}</span>,
     }),
     columnHelper.accessor('empleado', {
       header: 'Empleado',
-      cell: ({ getValue }) => <span className="text-muted font-monospace">{getValue() ?? '—'}</span>,
+      cell: ({ getValue }) => <span className="text-muted" style={{ fontSize: 12 }}>{getValue() ?? '—'}</span>,
     }),
   columnHelper.accessor('perfilDescripcion', {
   header: 'Perfil',
@@ -160,28 +159,22 @@ const handleCambiarPerfil = async (payload) => {
       header: 'Acciones',
       cell: ({ row }) => (
         <div className="d-flex gap-1">
-          <Button size="sm" variant="outline-secondary" title="Editar"
-            onClick={() => { setSelected(row.original); setShowModal(true); }}>
-            <FaPen size={12} />
-          </Button>
-          <Button size="sm" variant="outline-warning" title="Cambiar clave"
-            onClick={() => { setSelected(row.original); setShowClaveModal(true); }}>
-            <FaKey size={12} />
-          </Button>
-          <Button size="sm"
-            variant={row.original.estadoUsuario === 'A' ? 'outline-danger' : 'outline-success'}
-            title={row.original.estadoUsuario === 'A' ? 'Bloquear' : 'Activar'}
-            onClick={() => handleToggleEstado(row.original)}>
-            {row.original.estadoUsuario === 'A' ? <FaLock size={12} /> : <FaLockOpen size={12} />}
-          </Button>
-          <Button size="sm" variant="outline-primary" title="Cambiar perfil"
-          onClick={() => { setSelected(row.original); setShowPerfilModal(true); }}>
-           <FaKey size={12} />
-        </Button>
-          <Button size="sm" variant="outline-danger" title="Eliminar"
-            onClick={() => { setSelected(row.original); setShowDeleteModal(true); }}>
-            <FaTrash size={12} />
-          </Button>
+          {[
+            { icon:<FaPen size={13}/>,    title:'Editar',          color:'#185FA5', bg:'#eff6ff', bd:'#bfdbfe', onClick:() => { setSelected(row.original); setShowModal(true); } },
+            { icon:<FaKey size={13}/>,    title:'Cambiar clave',   color:'#d97706', bg:'#fffbeb', bd:'#fde68a', onClick:() => { setSelected(row.original); setShowClaveModal(true); } },
+            row.original.estadoUsuario === 'A'
+              ? { icon:<FaLock size={13}/>,     title:'Bloquear', color:'#dc2626', bg:'#fef2f2', bd:'#fecaca', onClick:() => handleToggleEstado(row.original) }
+              : { icon:<FaLockOpen size={13}/>, title:'Activar',  color:'#16a34a', bg:'#f0fdf4', bd:'#bbf7d0', onClick:() => handleToggleEstado(row.original) },
+            { icon:<FaKey size={13}/>,    title:'Cambiar perfil',  color:'#0891b2', bg:'#ecfeff', bd:'#a5f3fc', onClick:() => { setSelected(row.original); setShowPerfilModal(true); } },
+            { icon:<FaTrash size={13}/>,  title:'Eliminar',        color:'#dc2626', bg:'#fef2f2', bd:'#fecaca', onClick:() => { setSelected(row.original); setShowDeleteModal(true); } },
+          ].map(({ icon, title, color, bg, bd, onClick }) => (
+            <button key={title} onClick={onClick} title={title}
+              style={{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:30, height:30, borderRadius:7, border:`1.5px solid ${bd}`, background:bg, color, cursor:'pointer', transition:'all 0.15s' }}
+              onMouseEnter={e => { e.currentTarget.style.background=color; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor=color; }}
+              onMouseLeave={e => { e.currentTarget.style.background=bg; e.currentTarget.style.color=color; e.currentTarget.style.borderColor=bd; }}>
+              {icon}
+            </button>
+          ))}
         </div>
       ),
     }),
@@ -303,34 +296,46 @@ const kpis = {
         <Row>
           <Col lg={12}>
             <div className="st-wrapper">
-              <div className="st-toolbar row mb-3 g-2 align-items-center">
-                <Col xs={12} sm={6} lg={3}>
-                  <div className="input-group flex-nowrap">
-                    <span className="input-group-text px-2">
-                      <svg className="sa-icon sa-bold" width={14} height={14}>
-                        <use href="/icons/sprite.svg#search"></use>
-                      </svg>
-                    </span>
-                    <input type="text" className="form-control"
-                      placeholder="Buscar usuario, nombre..."
-                      value={searchText}
-                      onChange={e => { setSearchText(e.target.value); setGlobalFilter(e.target.value); }}
-                      autoComplete="off"/>
-                    {searchText && (
-                      <button className="btn btn-outline-secondary" type="button"
-                        onClick={() => { setSearchText(''); setGlobalFilter(''); }}>✕</button>
-                    )}
-                  </div>
-                </Col>
-                <Col xs={6} sm={4} lg={2}>
-                  <SearchableSelect value={filterEstado} onChange={setFilterEstado} options={[{value:'A',label:'Activo'},{value:'I',label:'Inactivo'},{value:'B',label:'Bloqueado'}]} placeholder="Estado" />
-                </Col>
-                <Col className="d-flex justify-content-end">
-                  <Button variant="primary" size="sm"
-                    onClick={() => { setSelected(null); setShowModal(true); }}>
-                    <FaPlus size={12} className="me-1" /> Nuevo usuario
-                  </Button>
-                </Col>
+              {/* Toolbar */}
+              <div className="card border-0 shadow-sm mb-3">
+                <div className="card-body py-2 px-3">
+                  <Row className="g-2 align-items-center">
+                    <Col xs={12} md={4}>
+                      <div style={{ position: 'relative' }}>
+                        <i className="ri-search-line" style={{
+                          position: 'absolute', left: 10, top: '50%',
+                          transform: 'translateY(-50%)', color: '#9ca3af', fontSize: 14,
+                        }} />
+                        <input type="text" value={globalFilter ?? ''}
+                          onChange={e => setGlobalFilter(e.target.value)}
+                          placeholder="Buscar usuario, nombre..."
+                          autoComplete="off"
+                          style={{ width: '100%', padding: '7px 36px 7px 32px', border: '1.5px solid #dde1e7', borderRadius: 8, fontSize: 13, outline: 'none', background: 'white' }}
+                          onFocus={e => e.target.style.borderColor = '#185FA5'}
+                          onBlur={e  => e.target.style.borderColor = '#dde1e7'}
+                        />
+                        {globalFilter && (
+                          <button onClick={() => setGlobalFilter('')}
+                            style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', padding: 2, display: 'flex' }}>
+                            <FaXmark size={12} />
+                          </button>
+                        )}
+                      </div>
+                    </Col>
+                    <Col xs={6} md={2}>
+                      <SearchableSelect value={filterEstado} onChange={setFilterEstado}
+                        options={[{value:'A',label:'Activo'},{value:'I',label:'Inactivo'},{value:'B',label:'Bloqueado'}]} placeholder="Estado" />
+                    </Col>
+                    <Col xs="auto" className="ms-auto">
+                      <button onClick={() => { setSelected(null); setShowModal(true); }}
+                        style={{ display:'flex', alignItems:'center', gap:6, padding:'6px 14px', borderRadius:7, border:'1.5px solid #185FA5', background:'#eff6ff', color:'#185FA5', fontSize:13, fontWeight:600, cursor:'pointer', transition:'all 0.15s' }}
+                        onMouseEnter={e => { e.currentTarget.style.background='#185FA5'; e.currentTarget.style.color='white'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background='#eff6ff'; e.currentTarget.style.color='#185FA5'; }}>
+                        <FaPlus size={12} /> Nuevo usuario
+                      </button>
+                    </Col>
+                  </Row>
+                </div>
               </div>
 
               <DataTable table={table} emptyMessage="No se encontraron usuarios" />
