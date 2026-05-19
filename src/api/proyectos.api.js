@@ -40,9 +40,16 @@ export const proyectoOCClienteApi = {
 };
 
 export const proyectoHorasApi = {
-  getByProyecto:         (codProy)       => httpGestion.get(`/api/ProyectoHoras/proyecto/${codProy}`),
+  getByProyecto:         (codProy)          => httpGestion.get(`/api/ProyectoHoras/proyecto/${codProy}`),
   updateHoras:           (codProy, payload) => httpGestion.put(`/api/ProyectoHoras/proyecto/${codProy}`, payload),
-  addHorasFuncional:     (payload)       => httpGestion.post("/api/ProyectoHoras/funcional", payload),
-  updateHorasFuncional:  (id, payload)   => httpGestion.put(`/api/ProyectoHoras/funcional/${id}`, payload),
-  deleteHorasFuncional:  (id)            => httpGestion.del(`/api/ProyectoHoras/funcional/${id}`),
+  addHorasFuncional:     (payload)          => httpGestion.post("/api/ProyectoHoras/funcional", payload),
+  updateHorasFuncional:  (id, payload)      => httpGestion.put(`/api/ProyectoHoras/funcional/${id}`, payload),
+  deleteHorasFuncional:  (id)               => httpGestion.del(`/api/ProyectoHoras/funcional/${id}`),
+};
+
+export const proyectoControlMensualApi = {
+  listarPorProyecto: (codProy)       => httpGestion.get(`/api/ProyectoControlMensual/proyecto/${codProy}`),
+  crear:             (payload)       => httpGestion.post("/api/ProyectoControlMensual", payload),
+  editar:            (id, payload)   => httpGestion.put(`/api/ProyectoControlMensual/${id}`, payload),
+  eliminar:          (id)            => httpGestion.del(`/api/ProyectoControlMensual/${id}`),
 };

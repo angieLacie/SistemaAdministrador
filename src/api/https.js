@@ -12,8 +12,8 @@ const handleUnauthorized = () => {
 };
 
 // ── Licencias ─────────────────────────────────────────
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://localhost:7279";
-//const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://10.9.1.113:7279";
+//const API_BASE = import.meta.env.VITE_API_BASE_URL || "https://localhost:7279";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://10.9.1.113:7279";
 
 async function request(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -45,8 +45,8 @@ export const http = {
 };
 
 // ── Gestion / Proyectos ───────────────────────────────
-//const API_GESTION_BASE = import.meta.env.VITE_API_GESTION_URL || "http://10.9.1.113:7035";
-const API_GESTION_BASE = import.meta.env.VITE_API_GESTION_URL || "https://localhost:7035";
+ const API_GESTION_BASE = import.meta.env.VITE_API_GESTION_URL || "http://10.9.1.113:7035";
+//const API_GESTION_BASE = import.meta.env.VITE_API_GESTION_URL || "https://localhost:7035";
   
 async function requestGestion(path, options = {}) {
   const res = await fetch(`${API_GESTION_BASE}${path}`, {
@@ -78,8 +78,8 @@ export const httpGestion = {
 };
 
 // ── Seguridad / Accesos ───────────────────────────────
-//const API_SEGURIDAD_BASE = import.meta.env.VITE_API_SEGURIDAD_URL || "http://10.9.1.113:7191";
- const API_SEGURIDAD_BASE = import.meta.env.VITE_API_SEGURIDAD_URL || "https://localhost:7191";
+ const API_SEGURIDAD_BASE = import.meta.env.VITE_API_SEGURIDAD_URL || "http://10.9.1.113:7191";
+ //const API_SEGURIDAD_BASE = import.meta.env.VITE_API_SEGURIDAD_URL || "https://localhost:7191";
 
 async function requestSeguridad(path, options = {}) {
   const res = await fetch(`${API_SEGURIDAD_BASE}${path}`, {
@@ -111,8 +111,8 @@ export const httpSeguridad = {
 };
 
 // ── Monitor ───────────────────────────────────────────
-//const API_MONITOR_BASE = import.meta.env.VITE_API_MONITOR_URL || "http://10.9.1.113:7235";
- const API_MONITOR_BASE = import.meta.env.VITE_API_MONITOR_URL || "http://localhost:5145";
+const API_MONITOR_BASE = import.meta.env.VITE_API_MONITOR_URL || "http://10.9.1.113:7235";
+ //const API_MONITOR_BASE = import.meta.env.VITE_API_MONITOR_URL || "http://localhost:5145";
 
 async function requestMonitor(path, options = {}) {
   const res = await fetch(`${API_MONITOR_BASE}${path}`, {
@@ -144,8 +144,8 @@ export const httpMonitor = {
 };
 
 // ── Auth — sin interceptor (login no requiere token) ──
-//const API_AUTH_BASE = import.meta.env.VITE_API_AUTH_URL || "http://10.9.1.113:7006";
- const API_AUTH_BASE = import.meta.env.VITE_API_AUTH_URL || "https://localhost:7006";
+const API_AUTH_BASE = import.meta.env.VITE_API_AUTH_URL || "http://10.9.1.113:7006";
+ //const API_AUTH_BASE = import.meta.env.VITE_API_AUTH_URL || "https://localhost:7006";
 
 async function requestAuth(path, options = {}) {
   const res = await fetch(`${API_AUTH_BASE}${path}`, {
@@ -171,8 +171,8 @@ export const httpAuth = {
 };
 
 // ── Notificaciones ────────────────────────────────────
-//const API_NOTIF_BASE = import.meta.env.VITE_API_NOTIF_URL || "http://10.9.1.113:7400";
- const API_NOTIF_BASE = import.meta.env.VITE_API_NOTIF_URL || "https://localhost:7400";
+const API_NOTIF_BASE = import.meta.env.VITE_API_NOTIF_URL || "http://10.9.1.113:7400";
+// const API_NOTIF_BASE = import.meta.env.VITE_API_NOTIF_URL || "https://localhost:7400";
 
 async function requestNotificaciones(path, options = {}) {
   const res = await fetch(`${API_NOTIF_BASE}${path}`, {

@@ -11,7 +11,11 @@ import {
   proyectoOCProveedorService,
   proyectoOCClienteService,
   proyectoHorasService,
+  proyectoControlMensualService,
 } from '@/services/proyectos.service';
+
+// ── Helpers ───────────────────────────────────────────
+const MESES = ['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
 const EstadoBadge = ({ estado }) => {
   const map = {
@@ -23,6 +27,13 @@ const EstadoBadge = ({ estado }) => {
   };
   const e = map[estado] || { bg: '#F1EFE8', color: '#5F5E5A' };
   return <Badge style={{ background: e.bg, color: e.color, fontSize: 10 }}>{estado ?? '—'}</Badge>;
+};
+
+const estadoMesMap = {
+  'Normal':     { bg: '#EAF3DE', color: '#3B6D11' },
+  'En riesgo':  { bg: '#FAEEDA', color: '#BA7517' },
+  'Retrasado':  { bg: '#FCEBEB', color: '#A32D2D' },
+  'Completado': { bg: '#E6F1FB', color: '#185FA5' },
 };
 
 const Campo = ({ label, value, mono = false }) => (
@@ -37,10 +48,13 @@ const Campo = ({ label, value, mono = false }) => (
 const formatFecha = (f) => {
   if (!f) return '—';
   const d = new Date(f);
-  if (isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('es-PE');
+  return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('es-PE');
 };
 const formatMonto = (m) => m ? `S/ ${Number(m).toLocaleString('es-PE', { minimumFractionDigits: 2 })}` : '—';
+
+// ── Estilos ───────────────────────────────────────────
+const labelStyle = { fontSize: 12, fontWeight: 600, marginBottom: 4 };
+const inputStyle = { fontSize: 13, borderRadius: 8, border: '1.5px solid #dde1e7', padding: '7px 10px' };
 
 // ── Botones reutilizables ─────────────────────────────
 const BtnCancel = ({ onClick }) => (
@@ -60,11 +74,7 @@ const BtnSubmit = ({ saving, label = 'Guardar', loadingLabel = 'Guardando...' })
   </button>
 );
 
-// Estilos compactos para formularios en modals
-const labelStyle = { fontSize: 12, fontWeight: 600, marginBottom: 4 };
-const inputStyle = { fontSize: 13, borderRadius: 8, border: '1.5px solid #dde1e7', padding: '7px 10px' };
-
-// Estilos de botones de acción (compartidos)
+// ── Botones de acción ─────────────────────────────────
 const btn30Edit = {
   style: { display:'inline-flex', alignItems:'center', justifyContent:'center', width:28, height:28, borderRadius:7, border:'1.5px solid #bfdbfe', background:'#eff6ff', color:'#185FA5', cursor:'pointer', transition:'all 0.15s' },
   onMouseEnter: e => { e.currentTarget.style.background='#185FA5'; e.currentTarget.style.color='white'; e.currentTarget.style.borderColor='#185FA5'; },
@@ -86,7 +96,7 @@ const btnGreenSm = {
   onMouseLeave: e => { e.currentTarget.style.background='#f0fdf4'; e.currentTarget.style.color='#166534'; e.currentTarget.style.borderColor='#bbf7d0'; },
 };
 
-// ── OC Proveedor Section ─────────────────────────────
+// ── OC Proveedor Card ─────────────────────────────────
 const OCProveedorCard = ({ oc, onEdit, onDelete, onAddHES, onEditHES, onDeleteHES }) => {
   const [expanded, setExpanded] = useState(false);
   return (
@@ -116,20 +126,13 @@ const OCProveedorCard = ({ oc, onEdit, onDelete, onAddHES, onEditHES, onDeleteHE
             <Col md={6}><Campo label="Descripción Orden CO" value={oc.descripcionOrdenCO} /></Col>
             <Col md={12}><Campo label="Observación" value={oc.observacion} /></Col>
           </Row>
-
           <div className="d-flex align-items-center justify-content-between mb-2">
-            <p className="text-muted fw-semibold mb-0" style={{ fontSize: 11, textTransform: 'uppercase' }}>
-              HES Proveedor ({oc.hes?.length ?? 0})
-            </p>
-            <button onClick={() => onAddHES(oc.id)} {...btnBlueSm}>
-              <FaPlus size={9} /> Agregar HES
-            </button>
+            <span className="text-muted fw-semibold" style={{ fontSize: 11, textTransform: 'uppercase' }}>HES Proveedor ({oc.hes?.length ?? 0})</span>
+            <button onClick={() => onAddHES(oc.id)} {...btnBlueSm}><FaPlus size={9} /> Agregar HES</button>
           </div>
           {oc.hes?.length > 0 ? (
             <table className="table table-sm" style={{ fontSize: 12 }}>
-              <thead className="table-light">
-                <tr><th>Nro HES</th><th>% HES</th><th>Estado</th><th></th></tr>
-              </thead>
+              <thead className="table-light"><tr><th>Nro HES</th><th>% HES</th><th>Estado</th><th></th></tr></thead>
               <tbody>
                 {oc.hes.map(h => (
                   <tr key={h.id}>
@@ -153,7 +156,7 @@ const OCProveedorCard = ({ oc, onEdit, onDelete, onAddHES, onEditHES, onDeleteHE
   );
 };
 
-// ── OC Cliente Section ─────────────────────────────
+// ── OC Cliente Card ───────────────────────────────────
 const OCClienteCard = ({ oc, onEdit, onDelete, onAddHES, onEditHES, onDeleteHES }) => {
   const [expanded, setExpanded] = useState(false);
   return (
@@ -164,9 +167,7 @@ const OCClienteCard = ({ oc, onEdit, onDelete, onAddHES, onEditHES, onDeleteHES 
         <div className="d-flex align-items-center gap-2">
           {expanded ? <FaChevronDown size={10} /> : <FaChevronRight size={10} />}
           <span className="fw-semibold" style={{ fontSize: 13, color: '#3B6D11' }}>{oc.empRefacturable ?? '—'}</span>
-          <Badge bg="light" text="dark" style={{ fontSize: 10, border: '1px solid #C0DD97' }}>
-            {oc.codSAPCliente ?? 'Sin SAP'}
-          </Badge>
+          <Badge bg="light" text="dark" style={{ fontSize: 10, border: '1px solid #C0DD97' }}>{oc.codSAPCliente ?? 'Sin SAP'}</Badge>
           {oc.seRefactura && <Badge bg="success" style={{ fontSize: 9 }}>Refacturable</Badge>}
         </div>
         <div className="d-flex gap-1" onClick={e => e.stopPropagation()}>
@@ -183,20 +184,13 @@ const OCClienteCard = ({ oc, onEdit, onDelete, onAddHES, onEditHES, onDeleteHES 
             <Col md={3}><Campo label="Estado CSC" value={oc.estadoCSC} /></Col>
             <Col md={12}><Campo label="Observación" value={oc.observacion} /></Col>
           </Row>
-
           <div className="d-flex align-items-center justify-content-between mb-2">
-            <p className="text-muted fw-semibold mb-0" style={{ fontSize: 11, textTransform: 'uppercase' }}>
-              HES Cliente ({oc.hes?.length ?? 0})
-            </p>
-            <button onClick={() => onAddHES(oc.id)} {...btnGreenSm}>
-              <FaPlus size={9} /> Agregar HES
-            </button>
+            <span className="text-muted fw-semibold" style={{ fontSize: 11, textTransform: 'uppercase' }}>HES Cliente ({oc.hes?.length ?? 0})</span>
+            <button onClick={() => onAddHES(oc.id)} {...btnGreenSm}><FaPlus size={9} /> Agregar HES</button>
           </div>
           {oc.hes?.length > 0 ? (
             <table className="table table-sm" style={{ fontSize: 12 }}>
-              <thead className="table-light">
-                <tr><th>Nro HES</th><th>Nro Factura SAP</th><th>Monto PEN</th><th>Monto USD</th><th>Estado</th><th></th></tr>
-              </thead>
+              <thead className="table-light"><tr><th>Nro HES</th><th>Nro Factura SAP</th><th>Monto PEN</th><th>Monto USD</th><th>Estado</th><th></th></tr></thead>
               <tbody>
                 {oc.hes.map(h => (
                   <tr key={h.id}>
@@ -222,7 +216,7 @@ const OCClienteCard = ({ oc, onEdit, onDelete, onAddHES, onEditHES, onDeleteHES 
   );
 };
 
-// ── Modal genérico OC Proveedor ───────────────────────
+// ── Modal OC Proveedor ────────────────────────────────
 const OCProveedorModal = ({ show, onHide, onSave, oc, codProy, saving }) => {
   const { register, handleSubmit, reset } = useForm();
   useEffect(() => {
@@ -230,10 +224,9 @@ const OCProveedorModal = ({ show, onHide, onSave, oc, codProy, saving }) => {
       proveedor: oc.proveedor ?? '', importeProvPEN: oc.importeProvPEN ?? '',
       importeProvUSD: oc.importeProvUSD ?? '', cargadoOrdenCO: oc.cargadoOrdenCO ?? '',
       descripcionOrdenCO: oc.descripcionOrdenCO ?? '', solpedCSC: oc.solpedCSC ?? '',
-      oscsc: oc.oscsc ?? '', estadoProv: oc.estadoProv ?? '', estadoCSC: oc.estadoCSC ?? '',
-      observacion: oc.observacion ?? '',
+      oscsc: oc.oscsc ?? '', estadoProv: oc.estadoProv ?? '', observacion: oc.observacion ?? '',
     } : { proveedor:'', importeProvPEN:'', importeProvUSD:'', cargadoOrdenCO:'',
-      descripcionOrdenCO:'', solpedCSC:'', oscsc:'', estadoProv:'', estadoCSC:'', observacion:'' });
+      descripcionOrdenCO:'', solpedCSC:'', oscsc:'', estadoProv:'', observacion:'' });
   }, [show, oc]);
 
   const onSubmit = (data) => onSave({ ...data, codProy,
@@ -278,6 +271,7 @@ const OCProveedorModal = ({ show, onHide, onSave, oc, codProy, saving }) => {
   );
 };
 
+// ── Modal OC Cliente ──────────────────────────────────
 const OCClienteModal = ({ show, onHide, onSave, oc, codProy, saving }) => {
   const { register, handleSubmit, reset } = useForm();
   useEffect(() => {
@@ -286,7 +280,7 @@ const OCClienteModal = ({ show, onHide, onSave, oc, codProy, saving }) => {
       seRefactura: oc.seRefactura ?? false, importeRefPEN: oc.importeRefPEN ?? '',
       importeRefUSD: oc.importeRefUSD ?? '', osClienteCSC: oc.osClienteCSC ?? '',
       estadoCSC: oc.estadoCSC ?? '', observacion: oc.observacion ?? '',
-    } : { codSAPCliente:'', empRefacturable:'', seRefactura: false,
+    } : { codSAPCliente:'', empRefacturable:'', seRefactura:false,
       importeRefPEN:'', importeRefUSD:'', osClienteCSC:'', estadoCSC:'', observacion:'' });
   }, [show, oc]);
 
@@ -331,6 +325,7 @@ const OCClienteModal = ({ show, onHide, onSave, oc, codProy, saving }) => {
   );
 };
 
+// ── Modal HES ─────────────────────────────────────────
 const HESModal = ({ show, onHide, onSave, hes, tipo, saving }) => {
   const { register, handleSubmit, reset } = useForm();
   useEffect(() => {
@@ -352,7 +347,7 @@ const HESModal = ({ show, onHide, onSave, hes, tipo, saving }) => {
   });
 
   return (
-    <Modal show={show} onHide={onHide} centered size="lg">
+    <Modal show={show} onHide={onHide} centered>
       <ModalHeader closeButton><ModalTitle style={{ fontSize: 16 }}>{hes ? 'Editar HES' : 'Nuevo HES'} — {tipo === 'proveedor' ? 'Proveedor' : 'Cliente'}</ModalTitle></ModalHeader>
       <Form onSubmit={handleSubmit(onSubmit)}>
         <ModalBody className="px-4 py-3">
@@ -361,13 +356,11 @@ const HESModal = ({ show, onHide, onSave, hes, tipo, saving }) => {
             {tipo === 'proveedor' && (
               <Col md={6}><Form.Label style={labelStyle}>% HES</Form.Label><Form.Control style={inputStyle} type="number" step="0.01" {...register('pctHES')} placeholder="0.00"/></Col>
             )}
-            {tipo === 'cliente' && (
-              <>
-                <Col md={6}><Form.Label style={labelStyle}>Nro Factura SAP</Form.Label><Form.Control style={{ ...inputStyle, fontFamily:'monospace' }} {...register('nroFacturaSAP')}/></Col>
-                <Col md={6}><Form.Label style={labelStyle}>Monto Fact PEN</Form.Label><Form.Control style={inputStyle} type="number" step="0.01" {...register('montoFactPEN')} placeholder="0.00"/></Col>
-                <Col md={6}><Form.Label style={labelStyle}>Monto Fact USD</Form.Label><Form.Control style={inputStyle} type="number" step="0.01" {...register('montoFactUSD')} placeholder="0.00"/></Col>
-              </>
-            )}
+            {tipo === 'cliente' && (<>
+              <Col md={6}><Form.Label style={labelStyle}>Nro Factura SAP</Form.Label><Form.Control style={{ ...inputStyle, fontFamily:'monospace' }} {...register('nroFacturaSAP')}/></Col>
+              <Col md={6}><Form.Label style={labelStyle}>Monto Fact PEN</Form.Label><Form.Control style={inputStyle} type="number" step="0.01" {...register('montoFactPEN')} placeholder="0.00"/></Col>
+              <Col md={6}><Form.Label style={labelStyle}>Monto Fact USD</Form.Label><Form.Control style={inputStyle} type="number" step="0.01" {...register('montoFactUSD')} placeholder="0.00"/></Col>
+            </>)}
           </Row>
         </ModalBody>
         <ModalFooter className="gap-2">
@@ -379,28 +372,281 @@ const HESModal = ({ show, onHide, onSave, hes, tipo, saving }) => {
   );
 };
 
-// ── Componente principal ──────────────────────────
+// ── Modal Cronograma (FUERA del componente principal) ─
+const CronogramaModal = ({ show, onHide, cron, proyectoId, onSuccess }) => {
+  const [saving, setSaving] = useState(false);
+  const { register, handleSubmit, reset } = useForm();
+
+  useEffect(() => {
+    reset({
+      fechaEntrega:     cron?.fechaEntrega?.slice(0,10)     ?? '',
+      fRequerimiento:   cron?.fRequerimiento?.slice(0,10)   ?? '',
+      fEntregaFinal:    cron?.fEntregaFinal?.slice(0,10)    ?? '',
+      fCotizacion:      cron?.fCotizacion?.slice(0,10)      ?? '',
+      fAutorizado:      cron?.fAutorizado?.slice(0,10)      ?? '',
+      fIniConstruccion: cron?.fIniConstruccion?.slice(0,10) ?? '',
+      fFinConstruccion: cron?.fFinConstruccion?.slice(0,10) ?? '',
+      fIniValUsu:       cron?.fIniValUsu?.slice(0,10)       ?? '',
+      fCierre:          cron?.fCierre?.slice(0,10)          ?? '',
+    });
+  }, [show, cron]);
+
+  const onSubmit = async (data) => {
+    try {
+      setSaving(true);
+      await proyectosService.updateCronograma(proyectoId, {
+        fechaEntrega: data.fechaEntrega || null, fRequerimiento: data.fRequerimiento || null,
+        fEntregaFinal: data.fEntregaFinal || null, fCotizacion: data.fCotizacion || null,
+        fAutorizado: data.fAutorizado || null, fIniConstruccion: data.fIniConstruccion || null,
+        fFinConstruccion: data.fFinConstruccion || null, fIniValUsu: data.fIniValUsu || null,
+        fCierre: data.fCierre || null, usuarioModificacion: 'ADMIN',
+      });
+      toast.success('Cronograma actualizado');
+      onHide();
+      onSuccess();
+    } catch (err) { toast.error(err.message); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <Modal show={show} onHide={onHide} centered size="lg">
+      <ModalHeader closeButton><ModalTitle style={{ fontSize: 16 }}>Cronograma — {proyectoId}</ModalTitle></ModalHeader>
+      <Form onSubmit={handleSubmit(onSubmit)}>
+        <ModalBody className="px-4 py-3">
+          <Row className="g-2">
+            {[
+              { name: 'fechaEntrega',     label: 'Fecha entrega' },
+              { name: 'fRequerimiento',   label: 'F. Requerimiento' },
+              { name: 'fEntregaFinal',    label: 'F. Entrega final' },
+              { name: 'fCotizacion',      label: 'F. Cotización' },
+              { name: 'fAutorizado',      label: 'F. Autorizado' },
+              { name: 'fIniConstruccion', label: 'F. Ini. Construcción' },
+              { name: 'fFinConstruccion', label: 'F. Fin Construcción' },
+              { name: 'fIniValUsu',       label: 'F. Ini. Val. Usuario' },
+              { name: 'fCierre',          label: 'F. Cierre' },
+            ].map(f => (
+              <Col key={f.name} md={4}>
+                <Form.Label style={labelStyle}>{f.label}</Form.Label>
+                <Form.Control style={inputStyle} type="date" {...register(f.name)} />
+              </Col>
+            ))}
+          </Row>
+        </ModalBody>
+        <ModalFooter className="gap-2">
+          <BtnCancel onClick={onHide} />
+          <BtnSubmit saving={saving} label="Guardar cronograma" />
+        </ModalFooter>
+      </Form>
+    </Modal>
+  );
+};
+
+// ── Modal Horas (FUERA del componente principal) ──────
+const HorasModal = ({ show, onHide, horas, proyectoId, onSuccess }) => {
+  const [saving, setSaving] = useState(false);
+  const { register, handleSubmit, reset } = useForm();
+
+  useEffect(() => {
+    reset({
+      horasProyecto: horas?.horasProyecto ?? '',
+      horasTIC:      horas?.horasTIC      ?? '',
+      horasJP:       horas?.horasJP       ?? '',
+      horasProv:     horas?.horasProv     ?? '',
+    });
+  }, [show, horas]);
+
+  const onSubmit = async (data) => {
+    try {
+      setSaving(true);
+      await proyectoHorasService.updateHoras(proyectoId, {
+        horasProyecto: data.horasProyecto ? parseFloat(data.horasProyecto) : null,
+        horasTIC:      data.horasTIC      ? parseFloat(data.horasTIC)      : null,
+        horasJP:       data.horasJP       ? parseFloat(data.horasJP)       : null,
+        horasProv:     data.horasProv     ? parseFloat(data.horasProv)     : null,
+      });
+      toast.success('Horas actualizadas');
+      onHide();
+      onSuccess();
+    } catch (err) { toast.error(err.message); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <Modal show={show} onHide={onHide} centered>
+      <ModalHeader closeButton><ModalTitle style={{ fontSize: 16 }}>Horas del proyecto</ModalTitle></ModalHeader>
+      <Form onSubmit={handleSubmit(onSubmit)}>
+        <ModalBody className="px-4 py-3">
+          <Row className="g-2">
+            <Col md={6}><Form.Label style={labelStyle}>Horas proyecto</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasProyecto')} placeholder="0"/></Col>
+            <Col md={6}><Form.Label style={labelStyle}>Horas TIC</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasTIC')} placeholder="0"/></Col>
+            <Col md={6}><Form.Label style={labelStyle}>Horas JP</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasJP')} placeholder="0"/></Col>
+            <Col md={6}><Form.Label style={labelStyle}>Horas Prov</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasProv')} placeholder="0"/></Col>
+          </Row>
+        </ModalBody>
+        <ModalFooter className="gap-2">
+          <BtnCancel onClick={onHide} />
+          <BtnSubmit saving={saving} />
+        </ModalFooter>
+      </Form>
+    </Modal>
+  );
+};
+
+// ── Modal Horas Funcional (FUERA del componente principal) ─
+const HorasFuncionalModal = ({ show, onHide, item, codProy, onSuccess }) => {
+  const [saving, setSaving] = useState(false);
+  const { register, handleSubmit, reset } = useForm();
+
+  useEffect(() => {
+    reset(item
+      ? { anio: item.anio, mes: item.mes, horasTicMes: item.horasTicMes ?? '' }
+      : { anio: new Date().getFullYear(), mes: new Date().getMonth() + 1, horasTicMes: '' }
+    );
+  }, [show, item]);
+
+  const onSubmit = async (data) => {
+    try {
+      setSaving(true);
+      const payload = { codProy, anio: parseInt(data.anio), mes: parseInt(data.mes), horasTicMes: parseFloat(data.horasTicMes) };
+      if (item) await proyectoHorasService.updateHorasFuncional(item.id, payload);
+      else      await proyectoHorasService.addHorasFuncional(payload);
+      toast.success('Horas funcional guardadas');
+      onHide();
+      onSuccess();
+    } catch (err) { toast.error(err.message); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <Modal show={show} onHide={onHide} centered>
+      <ModalHeader closeButton><ModalTitle style={{ fontSize: 16 }}>{item ? 'Editar' : 'Nuevo'} registro mensual</ModalTitle></ModalHeader>
+      <Form onSubmit={handleSubmit(onSubmit)}>
+        <ModalBody className="px-4 py-3">
+          <Row className="g-2">
+            <Col md={4}><Form.Label style={labelStyle}>Año</Form.Label><Form.Control style={inputStyle} type="number" {...register('anio')} disabled={!!item}/></Col>
+            <Col md={4}><Form.Label style={labelStyle}>Mes</Form.Label>
+              <Form.Select style={inputStyle} {...register('mes')} disabled={!!item}>
+                {MESES.slice(1).map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
+              </Form.Select>
+            </Col>
+            <Col md={4}><Form.Label style={labelStyle}>Horas TIC mes</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasTicMes')} placeholder="0"/></Col>
+          </Row>
+        </ModalBody>
+        <ModalFooter className="gap-2">
+          <BtnCancel onClick={onHide} />
+          <BtnSubmit saving={saving} />
+        </ModalFooter>
+      </Form>
+    </Modal>
+  );
+};
+
+// ── Modal Control Mensual (NUEVO) ─────────────────────
+const ControlMensualModal = ({ show, onHide, item, codProy, onSuccess }) => {
+  const [saving, setSaving] = useState(false);
+  const { register, handleSubmit, reset } = useForm();
+
+  useEffect(() => {
+    reset(item ? {
+      anio: item.anio, mes: item.mes,
+      avancePct:    item.avancePct    ?? '',
+      estadoMes:    item.estadoMes    ?? 'Normal',
+      observaciones: item.observaciones ?? '',
+    } : {
+      anio: new Date().getFullYear(),
+      mes:  new Date().getMonth() + 1,
+      avancePct: '', estadoMes: 'Normal', observaciones: '',
+    });
+  }, [show, item]);
+
+  const onSubmit = async (data) => {
+    try {
+      setSaving(true);
+      const payload = {
+        codProy,
+        anio:         parseInt(data.anio),
+        mes:          parseInt(data.mes),
+        avancePct:    data.avancePct ? parseFloat(data.avancePct) : null,
+        estadoMes:    data.estadoMes || null,
+        observaciones: data.observaciones || null,
+      };
+      if (item) await proyectoControlMensualService.editar(item.id, payload);
+      else      await proyectoControlMensualService.crear(payload);
+      toast.success(item ? 'Control actualizado' : 'Control registrado');
+      onHide();
+      onSuccess();
+    } catch (err) { toast.error(err.message); }
+    finally { setSaving(false); }
+  };
+
+  return (
+    <Modal show={show} onHide={onHide} centered>
+      <ModalHeader closeButton><ModalTitle style={{ fontSize: 16 }}>{item ? 'Editar' : 'Nuevo'} control mensual</ModalTitle></ModalHeader>
+      <Form onSubmit={handleSubmit(onSubmit)}>
+        <ModalBody className="px-4 py-3">
+          <Row className="g-3">
+            <Col md={4}><Form.Label style={labelStyle}>Año</Form.Label>
+              <Form.Control style={inputStyle} type="number" {...register('anio')} disabled={!!item}/>
+            </Col>
+            <Col md={4}><Form.Label style={labelStyle}>Mes</Form.Label>
+              <Form.Select style={inputStyle} {...register('mes')} disabled={!!item}>
+                {MESES.slice(1).map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
+              </Form.Select>
+            </Col>
+            <Col md={4}><Form.Label style={labelStyle}>Avance %</Form.Label>
+              <Form.Control style={inputStyle} type="number" min={0} max={100} step={5} {...register('avancePct')} placeholder="0"/>
+            </Col>
+            <Col md={12}><Form.Label style={labelStyle}>Estado del mes</Form.Label>
+              <Form.Select style={inputStyle} {...register('estadoMes')}>
+                <option value="Normal">🟢 Normal</option>
+                <option value="En riesgo">🟡 En riesgo</option>
+                <option value="Retrasado">🔴 Retrasado</option>
+                <option value="Completado">🔵 Completado</option>
+              </Form.Select>
+            </Col>
+            <Col md={12}><Form.Label style={labelStyle}>Observaciones</Form.Label>
+              <Form.Control style={{ ...inputStyle, resize:'none' }} as="textarea" rows={3}
+                {...register('observaciones')} placeholder="Notas del mes, avances, bloqueos..."/>
+            </Col>
+          </Row>
+        </ModalBody>
+        <ModalFooter className="gap-2">
+          <BtnCancel onClick={onHide} />
+          <BtnSubmit saving={saving} label={item ? 'Guardar' : 'Registrar'} />
+        </ModalFooter>
+      </Form>
+    </Modal>
+  );
+};
+
+// ── Componente principal ──────────────────────────────
 const DetalleProyecto = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [detalle, setDetalle]   = useState(null);
-  const [loading, setLoading]   = useState(true);
-  const [saving, setSaving]     = useState(false);
-  const [activeTab, setActiveTab] = useState('general');
+  const [detalle, setDetalle]           = useState(null);
+  const [controlMensual, setControlMensual] = useState([]);
+  const [loading, setLoading]           = useState(true);
+  const [saving, setSaving]             = useState(false);
+  const [activeTab, setActiveTab]       = useState('general');
 
-  const [modalOCProv, setModalOCProv]     = useState({ show: false, item: null });
-  const [modalOCCli, setModalOCCli]       = useState({ show: false, item: null });
-  const [modalHES, setModalHES]           = useState({ show: false, item: null, idOC: null, tipo: null });
-  const [modalCronograma, setModalCronograma] = useState(false);
-  const [modalHoras, setModalHoras]       = useState(false);
-  const [modalHorasFuncional, setModalHorasFuncional] = useState({ show: false, item: null });
+  const [modalOCProv, setModalOCProv]   = useState({ show: false, item: null });
+  const [modalOCCli, setModalOCCli]     = useState({ show: false, item: null });
+  const [modalHES, setModalHES]         = useState({ show: false, item: null, idOC: null, tipo: null });
+  const [modalCron, setModalCron]       = useState(false);
+  const [modalHoras, setModalHoras]     = useState(false);
+  const [modalHF, setModalHF]           = useState({ show: false, item: null });
+  const [modalControl, setModalControl] = useState({ show: false, item: null });
 
   const cargar = async () => {
     try {
       setLoading(true);
-      const data = await proyectosService.obtener(id);
+      const [data, control] = await Promise.all([
+        proyectosService.obtener(id),
+        proyectoControlMensualService.listarPorProyecto(id),
+      ]);
       setDetalle(data);
+      setControlMensual(control);
     } catch (err) {
       toast.error('Error al cargar proyecto: ' + err.message);
     } finally {
@@ -410,50 +656,51 @@ const DetalleProyecto = () => {
 
   useEffect(() => { cargar(); }, [id]);
 
+  // ── OC Proveedor handlers ──
   const handleSaveOCProv = async (payload) => {
     try {
       setSaving(true);
       if (modalOCProv.item) await proyectoOCProveedorService.editar(modalOCProv.item.id, payload);
-      else await proyectoOCProveedorService.crear(payload);
+      else                  await proyectoOCProveedorService.crear(payload);
       toast.success('OC Proveedor guardada');
       setModalOCProv({ show: false, item: null });
       await cargar();
     } catch (err) { toast.error(err.message); }
     finally { setSaving(false); }
   };
-
   const handleDeleteOCProv = async (ocId) => {
     try { await proyectoOCProveedorService.eliminar(ocId); toast.success('OC Proveedor eliminada'); await cargar(); }
     catch (err) { toast.error(err.message); }
   };
 
+  // ── OC Cliente handlers ──
   const handleSaveOCCli = async (payload) => {
     try {
       setSaving(true);
       if (modalOCCli.item) await proyectoOCClienteService.editar(modalOCCli.item.id, payload);
-      else await proyectoOCClienteService.crear(payload);
+      else                 await proyectoOCClienteService.crear(payload);
       toast.success('OC Cliente guardada');
       setModalOCCli({ show: false, item: null });
       await cargar();
     } catch (err) { toast.error(err.message); }
     finally { setSaving(false); }
   };
-
   const handleDeleteOCCli = async (ocId) => {
     try { await proyectoOCClienteService.eliminar(ocId); toast.success('OC Cliente eliminada'); await cargar(); }
     catch (err) { toast.error(err.message); }
   };
 
+  // ── HES handlers ──
   const handleSaveHES = async (payload) => {
     try {
       setSaving(true);
       const { idOC, tipo, item } = modalHES;
       if (item) {
         if (tipo === 'proveedor') await proyectoOCProveedorService.updateHES(item.id, payload);
-        else await proyectoOCClienteService.updateHES(item.id, payload);
+        else                      await proyectoOCClienteService.updateHES(item.id, payload);
       } else {
         if (tipo === 'proveedor') await proyectoOCProveedorService.addHES(idOC, payload);
-        else await proyectoOCClienteService.addHES(idOC, payload);
+        else                      await proyectoOCClienteService.addHES(idOC, payload);
       }
       toast.success('HES guardado');
       setModalHES({ show: false, item: null, idOC: null, tipo: null });
@@ -461,175 +708,22 @@ const DetalleProyecto = () => {
     } catch (err) { toast.error(err.message); }
     finally { setSaving(false); }
   };
-
   const handleDeleteHES = async (hesId, tipo) => {
     try {
       if (tipo === 'proveedor') await proyectoOCProveedorService.deleteHES(hesId);
-      else await proyectoOCClienteService.deleteHES(hesId);
+      else                      await proyectoOCClienteService.deleteHES(hesId);
       toast.success('HES eliminado');
       await cargar();
     } catch (err) { toast.error(err.message); }
   };
 
-  // ── Cronograma ──
-  const CronogramaModal = () => {
-    const { register, handleSubmit, reset } = useForm();
-    const cron = detalle?.cronograma;
-    useEffect(() => {
-      reset({
-        fechaEntrega:     cron?.fechaEntrega?.slice(0,10)     ?? '',
-        fRequerimiento:   cron?.fRequerimiento?.slice(0,10)   ?? '',
-        fEntregaFinal:    cron?.fEntregaFinal?.slice(0,10)    ?? '',
-        fCotizacion:      cron?.fCotizacion?.slice(0,10)      ?? '',
-        fAutorizado:      cron?.fAutorizado?.slice(0,10)      ?? '',
-        fIniConstruccion: cron?.fIniConstruccion?.slice(0,10) ?? '',
-        fFinConstruccion: cron?.fFinConstruccion?.slice(0,10) ?? '',
-        fIniValUsu:       cron?.fIniValUsu?.slice(0,10)       ?? '',
-        fCierre:          cron?.fCierre?.slice(0,10)          ?? '',
-      });
-    }, [modalCronograma]);
-
-    const onSubmit = async (data) => {
-      try {
-        setSaving(true);
-        const payload = {
-          fechaEntrega: data.fechaEntrega || null, fRequerimiento: data.fRequerimiento || null,
-          fEntregaFinal: data.fEntregaFinal || null, fCotizacion: data.fCotizacion || null,
-          fAutorizado: data.fAutorizado || null, fIniConstruccion: data.fIniConstruccion || null,
-          fFinConstruccion: data.fFinConstruccion || null, fIniValUsu: data.fIniValUsu || null,
-          fCierre: data.fCierre || null, usuarioModificacion: 'ADMIN',
-        };
-        await proyectosService.updateCronograma(id, payload);
-        toast.success('Cronograma actualizado');
-        setModalCronograma(false);
-        await cargar();
-      } catch (err) { toast.error(err.message); }
-      finally { setSaving(false); }
-    };
-    return (
-      <Modal show={modalCronograma} onHide={() => setModalCronograma(false)} centered size="lg">
-        <ModalHeader closeButton><ModalTitle style={{ fontSize: 16 }}>Cronograma — {id}</ModalTitle></ModalHeader>
-        <Form onSubmit={handleSubmit(onSubmit)}>
-          <ModalBody className="px-4 py-3">
-            <Row className="g-2">
-              {[
-                { name: 'fechaEntrega', label: 'Fecha entrega' },
-                { name: 'fRequerimiento', label: 'F. Requerimiento' },
-                { name: 'fEntregaFinal', label: 'F. Entrega final' },
-                { name: 'fCotizacion', label: 'F. Cotización' },
-                { name: 'fAutorizado', label: 'F. Autorizado' },
-                { name: 'fIniConstruccion', label: 'F. Ini. Construcción' },
-                { name: 'fFinConstruccion', label: 'F. Fin Construcción' },
-                { name: 'fIniValUsu', label: 'F. Ini. Val. Usuario' },
-                { name: 'fCierre', label: 'F. Cierre' },
-              ].map(f => (
-                <Col key={f.name} md={4}>
-                  <Form.Label style={labelStyle}>{f.label}</Form.Label>
-                  <Form.Control style={inputStyle} type="date" {...register(f.name)} />
-                </Col>
-              ))}
-            </Row>
-          </ModalBody>
-          <ModalFooter className="gap-2">
-            <BtnCancel onClick={() => setModalCronograma(false)} />
-            <BtnSubmit saving={saving} label="Guardar cronograma" />
-          </ModalFooter>
-        </Form>
-      </Modal>
-    );
-  };
-
-  // ── Horas ──
-  const HorasModal = () => {
-    const { register, handleSubmit, reset } = useForm();
-    const h = detalle?.horas;
-    useEffect(() => {
-      reset({ horasProyecto: h?.horasProyecto ?? '', horasTIC: h?.horasTIC ?? '',
-        horasJP: h?.horasJP ?? '', horasProv: h?.horasProv ?? '' });
-    }, [modalHoras]);
-
-    const onSubmit = async (data) => {
-      try {
-        setSaving(true);
-        await proyectoHorasService.updateHoras(id, {
-          horasProyecto: data.horasProyecto ? parseFloat(data.horasProyecto) : null,
-          horasTIC: data.horasTIC ? parseFloat(data.horasTIC) : null,
-          horasJP: data.horasJP ? parseFloat(data.horasJP) : null,
-          horasProv: data.horasProv ? parseFloat(data.horasProv) : null,
-        });
-        toast.success('Horas actualizadas');
-        setModalHoras(false);
-        await cargar();
-      } catch (err) { toast.error(err.message); }
-      finally { setSaving(false); }
-    };
-
-    return (
-      <Modal show={modalHoras} onHide={() => setModalHoras(false)} centered size="lg">
-        <ModalHeader closeButton><ModalTitle style={{ fontSize: 16 }}>Horas del proyecto</ModalTitle></ModalHeader>
-        <Form onSubmit={handleSubmit(onSubmit)}>
-          <ModalBody className="px-4 py-3">
-            <Row className="g-2">
-              <Col md={6}><Form.Label style={labelStyle}>Horas proyecto</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasProyecto')} placeholder="0"/></Col>
-              <Col md={6}><Form.Label style={labelStyle}>Horas TIC</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasTIC')} placeholder="0"/></Col>
-              <Col md={6}><Form.Label style={labelStyle}>Horas JP</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasJP')} placeholder="0"/></Col>
-              <Col md={6}><Form.Label style={labelStyle}>Horas Prov</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasProv')} placeholder="0"/></Col>
-            </Row>
-          </ModalBody>
-          <ModalFooter className="gap-2">
-            <BtnCancel onClick={() => setModalHoras(false)} />
-            <BtnSubmit saving={saving} />
-          </ModalFooter>
-        </Form>
-      </Modal>
-    );
-  };
-
-  const HorasFuncionalModal = () => {
-    const { register, handleSubmit, reset } = useForm();
-    const item = modalHorasFuncional.item;
-    useEffect(() => {
-      reset(item ? { anio: item.anio, mes: item.mes, horasTicMes: item.horasTicMes ?? '' }
-        : { anio: new Date().getFullYear(), mes: new Date().getMonth() + 1, horasTicMes: '' });
-    }, [modalHorasFuncional.show]);
-
-    const onSubmit = async (data) => {
-      try {
-        setSaving(true);
-        const payload = { codProy: id, anio: parseInt(data.anio), mes: parseInt(data.mes), horasTicMes: parseFloat(data.horasTicMes) };
-        if (item) await proyectoHorasService.updateHorasFuncional(item.id, payload);
-        else await proyectoHorasService.addHorasFuncional(payload);
-        toast.success('Horas funcional guardadas');
-        setModalHorasFuncional({ show: false, item: null });
-        await cargar();
-      } catch (err) { toast.error(err.message); }
-      finally { setSaving(false); }
-    };
-
-    return (
-      <Modal show={modalHorasFuncional.show} onHide={() => setModalHorasFuncional({ show: false, item: null })} centered size="lg">
-        <ModalHeader closeButton><ModalTitle style={{ fontSize: 16 }}>{item ? 'Editar' : 'Nuevo'} registro mensual</ModalTitle></ModalHeader>
-        <Form onSubmit={handleSubmit(onSubmit)}>
-          <ModalBody className="px-4 py-3">
-            <Row className="g-2">
-              <Col md={4}><Form.Label style={labelStyle}>Año</Form.Label><Form.Control style={inputStyle} type="number" {...register('anio')} disabled={!!item}/></Col>
-              <Col md={4}><Form.Label style={labelStyle}>Mes</Form.Label>
-                <Form.Select style={inputStyle} {...register('mes')} disabled={!!item}>
-                  {['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'].map((m, i) => (
-                    <option key={i+1} value={i+1}>{m}</option>
-                  ))}
-                </Form.Select>
-              </Col>
-              <Col md={4}><Form.Label style={labelStyle}>Horas TIC mes</Form.Label><Form.Control style={inputStyle} type="number" step="0.5" {...register('horasTicMes')} placeholder="0"/></Col>
-            </Row>
-          </ModalBody>
-          <ModalFooter className="gap-2">
-            <BtnCancel onClick={() => setModalHorasFuncional({ show: false, item: null })} />
-            <BtnSubmit saving={saving} />
-          </ModalFooter>
-        </Form>
-      </Modal>
-    );
+  // ── Control mensual handlers ──
+  const handleDeleteControl = async (controlId) => {
+    try {
+      await proyectoControlMensualService.eliminar(controlId);
+      toast.success('Registro eliminado');
+      await cargar();
+    } catch (err) { toast.error(err.message); }
   };
 
   if (loading) return (
@@ -676,7 +770,7 @@ const DetalleProyecto = () => {
                 <Badge bg="light" text="dark" style={{ border: '1px solid #d1d5db', fontSize: 10 }}>{proyecto.estadoInterno}</Badge>
               )}
             </div>
-            <div className="d-flex gap-3 mt-1" style={{ fontSize: 12 }}>
+            <div className="d-flex gap-3 mt-1 flex-wrap" style={{ fontSize: 12 }}>
               <span className="text-muted">Analista: <strong>{proyecto.analista ?? '—'}</strong></span>
               <span className="text-muted">Key User: <strong>{proyecto.keyUser ?? '—'}</strong></span>
               <span className="text-muted">Periodo: <strong>{proyecto.periodo ?? '—'}</strong></span>
@@ -711,22 +805,22 @@ const DetalleProyecto = () => {
                 <div className="card border-0 shadow-sm">
                   <div className="card-header py-2 d-flex align-items-center justify-content-between">
                     <span className="fw-semibold small">Cronograma</span>
-                    <button onClick={() => setModalCronograma(true)} {...btnBlueSm}>
+                    <button onClick={() => setModalCron(true)} {...btnBlueSm}>
                       <FaPen size={10} /> Editar
                     </button>
                   </div>
                   <div className="card-body">
                     {[
-                      { label: 'F. Requerimiento',  value: cronograma?.fRequerimiento },
-                      { label: 'F. Entrega final',  value: cronograma?.fEntregaFinal },
-                      { label: 'F. Cotización',     value: cronograma?.fCotizacion },
-                      { label: 'F. Autorizado',     value: cronograma?.fAutorizado },
+                      { label: 'F. Requerimiento',     value: cronograma?.fRequerimiento },
+                      { label: 'F. Entrega final',     value: cronograma?.fEntregaFinal },
+                      { label: 'F. Cotización',        value: cronograma?.fCotizacion },
+                      { label: 'F. Autorizado',        value: cronograma?.fAutorizado },
                       { label: 'F. Ini. Construcción', value: cronograma?.fIniConstruccion },
                       { label: 'F. Fin Construcción',  value: cronograma?.fFinConstruccion },
                       { label: 'F. Ini. Val. Usuario', value: cronograma?.fIniValUsu },
-                      { label: 'F. Cierre',         value: cronograma?.fCierre },
+                      { label: 'F. Cierre',            value: cronograma?.fCierre },
                     ].map(f => (
-                      <div key={f.label} className="d-flex justify-content-between py-1" style={{ borderBottom: '0.5px solid var(--color-border-tertiary)', fontSize: 12 }}>
+                      <div key={f.label} className="d-flex justify-content-between py-1" style={{ borderBottom: '0.5px solid #f0f0f0', fontSize: 12 }}>
                         <span className="text-muted">{f.label}</span>
                         <span className="fw-semibold" style={{ fontFamily:'monospace' }}>{formatFecha(f.value)}</span>
                       </div>
@@ -744,17 +838,18 @@ const DetalleProyecto = () => {
                 <FaPlus size={11} /> Nueva OC Proveedor
               </button>
             </div>
-            {ocProveedores?.length === 0 ? (
-              <p className="text-muted text-center py-4">Sin OC de proveedor registradas.</p>
-            ) : ocProveedores?.map(oc => (
-              <OCProveedorCard key={oc.id} oc={oc}
-                onEdit={(item) => setModalOCProv({ show: true, item })}
-                onDelete={handleDeleteOCProv}
-                onAddHES={(idOC) => setModalHES({ show: true, item: null, idOC, tipo: 'proveedor' })}
-                onEditHES={(item, idOC) => setModalHES({ show: true, item, idOC, tipo: 'proveedor' })}
-                onDeleteHES={handleDeleteHES}
-              />
-            ))}
+            {!ocProveedores?.length
+              ? <p className="text-muted text-center py-4">Sin OC de proveedor registradas.</p>
+              : ocProveedores.map(oc => (
+                <OCProveedorCard key={oc.id} oc={oc}
+                  onEdit={(item) => setModalOCProv({ show: true, item })}
+                  onDelete={handleDeleteOCProv}
+                  onAddHES={(idOC) => setModalHES({ show: true, item: null, idOC, tipo: 'proveedor' })}
+                  onEditHES={(item, idOC) => setModalHES({ show: true, item, idOC, tipo: 'proveedor' })}
+                  onDeleteHES={handleDeleteHES}
+                />
+              ))
+            }
           </Tab>
 
           {/* ── OC CLIENTE ── */}
@@ -764,17 +859,18 @@ const DetalleProyecto = () => {
                 <FaPlus size={11} /> Nueva OC Cliente
               </button>
             </div>
-            {ocClientes?.length === 0 ? (
-              <p className="text-muted text-center py-4">Sin OC de cliente registradas.</p>
-            ) : ocClientes?.map(oc => (
-              <OCClienteCard key={oc.id} oc={oc}
-                onEdit={(item) => setModalOCCli({ show: true, item })}
-                onDelete={handleDeleteOCCli}
-                onAddHES={(idOC) => setModalHES({ show: true, item: null, idOC, tipo: 'cliente' })}
-                onEditHES={(item, idOC) => setModalHES({ show: true, item, idOC, tipo: 'cliente' })}
-                onDeleteHES={handleDeleteHES}
-              />
-            ))}
+            {!ocClientes?.length
+              ? <p className="text-muted text-center py-4">Sin OC de cliente registradas.</p>
+              : ocClientes.map(oc => (
+                <OCClienteCard key={oc.id} oc={oc}
+                  onEdit={(item) => setModalOCCli({ show: true, item })}
+                  onDelete={handleDeleteOCCli}
+                  onAddHES={(idOC) => setModalHES({ show: true, item: null, idOC, tipo: 'cliente' })}
+                  onEditHES={(item, idOC) => setModalHES({ show: true, item, idOC, tipo: 'cliente' })}
+                  onDeleteHES={handleDeleteHES}
+                />
+              ))
+            }
           </Tab>
 
           {/* ── HORAS ── */}
@@ -783,7 +879,7 @@ const DetalleProyecto = () => {
               <Col md={5}>
                 <div className="card border-0 shadow-sm">
                   <div className="card-header py-2 d-flex align-items-center justify-content-between">
-                    <span className="fw-semibold small">Horas totales del proyecto</span>
+                    <span className="fw-semibold small">Horas totales</span>
                     <button onClick={() => setModalHoras(true)} {...btnBlueSm}>
                       <FaPen size={10} /> Editar
                     </button>
@@ -795,7 +891,7 @@ const DetalleProyecto = () => {
                       { label: 'Horas JP',        value: horas?.horasJP },
                       { label: 'Horas Prov',      value: horas?.horasProv },
                     ].map(h => (
-                      <div key={h.label} className="d-flex justify-content-between py-2" style={{ borderBottom: '0.5px solid var(--color-border-tertiary)', fontSize: 13 }}>
+                      <div key={h.label} className="d-flex justify-content-between py-2" style={{ borderBottom: '0.5px solid #f0f0f0', fontSize: 13 }}>
                         <span className="text-muted">{h.label}</span>
                         <span className="fw-semibold">{h.value ?? '—'}</span>
                       </div>
@@ -807,63 +903,155 @@ const DetalleProyecto = () => {
                 <div className="card border-0 shadow-sm">
                   <div className="card-header py-2 d-flex align-items-center justify-content-between">
                     <span className="fw-semibold small">Horas TIC por mes</span>
-                    <button onClick={() => setModalHorasFuncional({ show: true, item: null })} {...btnBlueSm}>
+                    <button onClick={() => setModalHF({ show: true, item: null })} {...btnBlueSm}>
                       <FaPlus size={10} /> Agregar mes
                     </button>
                   </div>
                   <div className="card-body p-0">
-                    {horasFuncional?.length === 0 ? (
-                      <p className="text-muted text-center py-3" style={{ fontSize: 12 }}>Sin registros mensuales.</p>
-                    ) : (
-                      <table className="table table-sm mb-0" style={{ fontSize: 12 }}>
-                        <thead className="table-light">
-                          <tr><th>Año</th><th>Mes</th><th>Horas TIC mes</th><th></th></tr>
-                        </thead>
-                        <tbody>
-                          {horasFuncional?.map(h => (
-                            <tr key={h.id}>
-                              <td style={{ fontFamily:'monospace' }}>{h.anio}</td>
-                              <td>{['','Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][h.mes]}</td>
-                              <td><strong>{h.horasTicMes ?? '—'}</strong></td>
-                              <td>
-                                <div className="d-flex gap-1">
-                                  <button onClick={() => setModalHorasFuncional({ show: true, item: h })} title="Editar" {...btn30Edit}><FaPen size={9} /></button>
-                                  <button title="Eliminar" {...btn30Del}
-                                    onClick={async () => {
-                                      await proyectoHorasService.deleteHorasFuncional(h.id);
-                                      toast.success('Registro eliminado');
-                                      await cargar();
-                                    }}>
-                                    <FaTrash size={9} />
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    )}
+                    {!horasFuncional?.length
+                      ? <p className="text-muted text-center py-3" style={{ fontSize: 12 }}>Sin registros mensuales.</p>
+                      : (
+                        <table className="table table-sm mb-0" style={{ fontSize: 12 }}>
+                          <thead className="table-light">
+                            <tr><th>Año</th><th>Mes</th><th>Horas TIC mes</th><th></th></tr>
+                          </thead>
+                          <tbody>
+                            {horasFuncional.map(h => (
+                              <tr key={h.id}>
+                                <td style={{ fontFamily:'monospace' }}>{h.anio}</td>
+                                <td>{MESES[h.mes]}</td>
+                                <td><strong>{h.horasTicMes ?? '—'}</strong></td>
+                                <td>
+                                  <div className="d-flex gap-1">
+                                    <button onClick={() => setModalHF({ show: true, item: h })} title="Editar" {...btn30Edit}><FaPen size={9} /></button>
+                                    <button title="Eliminar" {...btn30Del}
+                                      onClick={async () => {
+                                        try { await proyectoHorasService.deleteHorasFuncional(h.id); toast.success('Registro eliminado'); await cargar(); }
+                                        catch (err) { toast.error(err.message); }
+                                      }}>
+                                      <FaTrash size={9} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      )
+                    }
                   </div>
                 </div>
               </Col>
             </Row>
           </Tab>
+
+          {/* ── CONTROL MENSUAL ── */}
+          <Tab eventKey="control" title={`Control mensual (${controlMensual?.length ?? 0})`}>
+            <div className="d-flex justify-content-between align-items-center mb-3">
+              <p className="mb-0 text-muted" style={{ fontSize: 12 }}>
+                Seguimiento del avance y estado del proyecto mes a mes.
+              </p>
+              <button onClick={() => setModalControl({ show: true, item: null })} {...btnBlueSm}>
+                <FaPlus size={10} /> Nuevo registro
+              </button>
+            </div>
+
+            {!controlMensual?.length ? (
+              <div className="text-center py-5">
+                <p className="text-muted mb-1" style={{ fontSize: 13 }}>Sin registros de control mensual.</p>
+                <p className="text-muted" style={{ fontSize: 12 }}>Agrega el primer registro para comenzar el seguimiento.</p>
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="table table-sm table-hover" style={{ fontSize: 12 }}>
+                  <thead className="table-light">
+                    <tr>
+                      <th style={{ width: 60 }}>Año</th>
+                      <th style={{ width: 50 }}>Mes</th>
+                      <th style={{ width: 140 }}>Avance</th>
+                      <th style={{ width: 110 }}>Estado</th>
+                      <th>Observaciones</th>
+                      <th style={{ width: 70 }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {controlMensual
+                      .slice()
+                      .sort((a, b) => a.anio !== b.anio ? b.anio - a.anio : b.mes - a.mes)
+                      .map(c => {
+                        const e = estadoMesMap[c.estadoMes] || { bg: '#F1EFE8', color: '#5F5E5A' };
+                        const pct = c.avancePct ?? 0;
+                        return (
+                          <tr key={c.id}>
+                            <td style={{ fontFamily:'monospace', fontWeight:600 }}>{c.anio}</td>
+                            <td className="fw-semibold">{MESES[c.mes]}</td>
+                            <td>
+                              <div className="d-flex align-items-center gap-2">
+                                <div style={{ flex: 1, height: 6, background: '#e5e7eb', borderRadius: 3, overflow:'hidden', minWidth: 60 }}>
+                                  <div style={{
+                                    width: `${pct}%`, height: '100%', borderRadius: 3,
+                                    background: pct >= 80 ? '#3B6D11' : pct >= 40 ? '#185FA5' : '#BA7517',
+                                    transition: 'width 0.3s',
+                                  }} />
+                                </div>
+                                <span className="fw-semibold" style={{ minWidth: 32, textAlign:'right' }}>{pct}%</span>
+                              </div>
+                            </td>
+                            <td>
+                              <Badge style={{ background: e.bg, color: e.color, fontSize: 10 }}>{c.estadoMes ?? '—'}</Badge>
+                            </td>
+                            <td className="text-muted" style={{ maxWidth: 280 }}>
+                              <span title={c.observaciones} style={{ display:'block', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                                {c.observaciones ?? '—'}
+                              </span>
+                            </td>
+                            <td>
+                              <div className="d-flex gap-1">
+                                <button onClick={() => setModalControl({ show: true, item: c })} title="Editar" {...btn30Edit}><FaPen size={9} /></button>
+                                <button onClick={() => handleDeleteControl(c.id)} title="Eliminar" {...btn30Del}><FaTrash size={9} /></button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Tab>
+
         </Tabs>
       </div>
 
-      {/* Modals */}
-      <OCProveedorModal show={modalOCProv.show} onHide={() => setModalOCProv({ show: false, item: null })}
+      {/* ── Modals ── */}
+      <OCProveedorModal
+        show={modalOCProv.show} onHide={() => setModalOCProv({ show: false, item: null })}
         onSave={handleSaveOCProv} oc={modalOCProv.item} codProy={id} saving={saving} />
 
-      <OCClienteModal show={modalOCCli.show} onHide={() => setModalOCCli({ show: false, item: null })}
+      <OCClienteModal
+        show={modalOCCli.show} onHide={() => setModalOCCli({ show: false, item: null })}
         onSave={handleSaveOCCli} oc={modalOCCli.item} codProy={id} saving={saving} />
 
-      <HESModal show={modalHES.show} onHide={() => setModalHES({ show: false, item: null, idOC: null, tipo: null })}
+      <HESModal
+        show={modalHES.show} onHide={() => setModalHES({ show: false, item: null, idOC: null, tipo: null })}
         onSave={handleSaveHES} hes={modalHES.item} tipo={modalHES.tipo} saving={saving} />
 
-      <CronogramaModal />
-      <HorasModal />
-      <HorasFuncionalModal />
+      <CronogramaModal
+        show={modalCron} onHide={() => setModalCron(false)}
+        cron={cronograma} proyectoId={id} onSuccess={cargar} />
+
+      <HorasModal
+        show={modalHoras} onHide={() => setModalHoras(false)}
+        horas={horas} proyectoId={id} onSuccess={cargar} />
+
+      <HorasFuncionalModal
+        show={modalHF.show} onHide={() => setModalHF({ show: false, item: null })}
+        item={modalHF.item} codProy={id} onSuccess={cargar} />
+
+      <ControlMensualModal
+        show={modalControl.show} onHide={() => setModalControl({ show: false, item: null })}
+        item={modalControl.item} codProy={id} onSuccess={cargar} />
+
     </div>
   );
 };

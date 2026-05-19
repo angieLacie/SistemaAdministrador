@@ -234,16 +234,11 @@ const ProyectoModal = ({ show, onHide, onSave, proyecto, saving = false }) => {
                 <Form.Label style={labelStyle}>Estado</Form.Label>
                 <Form.Select {...register('estado')} style={inputStyle}>
                   <option value="">Seleccionar...</option>
-                  <option value="1. ENT en Definicion">1. ENT en Definicion</option>
-                  <option value="2. ENT en Elaboración">2. ENT en Elaboración</option>
-                  <option value="3. ENT en Cotización">3. ENT en Cotización</option>
-                  <option value="4. En Espera de aprob.">4. En Espera de aprob.</option>
-                  <option value="4.1. Autorizado en espera">4.1. Autorizado en espera</option>
-                  <option value="5. En Construcción">5. En Construcción</option>
-                  <option value="6. Cerrado">6. Cerrado</option>
-                  <option value="7. Desestimado">7. Desestimado</option>
-                  <option value="8. Anulado">8. Anulado</option>
-                  <option value="9. En Pausa">9. En Pausa</option>
+                  <option value="Pendiente">Pendiente</option>
+                  <option value="En curso">En curso</option>
+                  <option value="Suspendido">Suspendido</option>
+                  <option value="Finalizado">Finalizado</option>
+                  <option value="Anulado">Anulado</option>
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -285,6 +280,23 @@ const ProyectoModal = ({ show, onHide, onSave, proyecto, saving = false }) => {
                 <Form.Control.Feedback type="invalid" style={{ fontSize: 11 }}>
                   {errors.montoTotalProyecto?.message}
                 </Form.Control.Feedback>
+              </Form.Group>
+            </Col>
+          </Row>
+
+          {/* ── Descripción ── */}
+          <p style={{ ...sectionTitle, marginTop: 8 }}>Descripción</p>
+          <Row className="g-3">
+            <Col md={12}>
+              <Form.Group>
+                <Form.Label style={labelStyle}>Historia / Contexto</Form.Label>
+                <Form.Control as="textarea" rows={2} {...register('historia')} placeholder="Contexto o historia del proyecto..." style={{ ...inputStyle, resize: 'none' }} />
+              </Form.Group>
+            </Col>
+            <Col md={12}>
+              <Form.Group>
+                <Form.Label style={labelStyle}>Resumen del alcance</Form.Label>
+                <Form.Control as="textarea" rows={2} {...register('resumenAlcance')} placeholder="Resumen del alcance del proyecto..." style={{ ...inputStyle, resize: 'none' }} />
               </Form.Group>
             </Col>
           </Row>

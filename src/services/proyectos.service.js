@@ -1,4 +1,4 @@
-import { proyectosApi, proyectoOCProveedorApi, proyectoOCClienteApi, proyectoHorasApi } from "../api/proyectos.api";
+import { proyectosApi, proyectoOCProveedorApi, proyectoOCClienteApi, proyectoHorasApi, proyectoControlMensualApi } from "../api/proyectos.api";
 
 export const proyectosService = {
   listar:          async (filtros)       => await proyectosApi.listar(filtros),
@@ -38,4 +38,11 @@ export const proyectoHorasService = {
   addHorasFuncional:    async (payload)           => await proyectoHorasApi.addHorasFuncional(payload),
   updateHorasFuncional: async (id, payload)       => await proyectoHorasApi.updateHorasFuncional(id, payload),
   deleteHorasFuncional: async (id)                => await proyectoHorasApi.deleteHorasFuncional(id),
+};
+
+export const proyectoControlMensualService = {
+  listarPorProyecto: async (codProy)       => await proyectoControlMensualApi.listarPorProyecto(codProy),
+  crear:             async (payload)       => await proyectoControlMensualApi.crear(payload),
+  editar:            async (id, payload)   => await proyectoControlMensualApi.editar(id, payload),
+  eliminar:          async (id)            => await proyectoControlMensualApi.eliminar(id),
 };
