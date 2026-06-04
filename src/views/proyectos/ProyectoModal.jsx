@@ -1,7 +1,47 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Modal, Form, Row, Col } from 'react-bootstrap';
 import { useForm } from 'react-hook-form';
 import { proyectosService } from '@/services/proyectos.service';
+
+const ESTADOS = [
+  '1. ENT en Definicion',
+  '2. ENT en Elaboracion',
+  '3. ENT en Cotización',
+  '4. En Espera de aprob.',
+  '4.1. Autorizado en espera',
+  '5. En Construcción',
+  '6. Cerrado',
+  '8. Anulado',
+  '9. En Pausa',
+  '10. Desestimado',
+];
+
+const ESTADOS_INTERNOS = [
+  '1. ENT en Definicion',
+  '2. ENT en Elaboración',
+  '2.1 ENT en Aprobación',
+  '3. ENT en Cotización',
+  '4. En Espera de aprob.',
+  '4.1. Autorizado en espera',
+  '5. En Construcción',
+  '5.1 En Pruebas TIC',
+  '5.2 En Pruebas Usuario',
+  '5.3 Marcha Blanca',
+  '6. Cerrado',
+  '7. Desestimado',
+  '8. Anulado',
+  '9. En Pausa',
+];
+
+const ANIOS = [2024, 2025, 2026, 2027];
+const MESES = [
+  { value: '01', label: 'Enero' },   { value: '02', label: 'Febrero' },
+  { value: '03', label: 'Marzo' },   { value: '04', label: 'Abril' },
+  { value: '05', label: 'Mayo' },    { value: '06', label: 'Junio' },
+  { value: '07', label: 'Julio' },   { value: '08', label: 'Agosto' },
+  { value: '09', label: 'Septiembre'},{ value: '10', label: 'Octubre' },
+  { value: '11', label: 'Noviembre'},{ value: '12', label: 'Diciembre' },
+];
 
 // ── Estilos reutilizables ────────────────────────────────────────────────────
 const sectionTitle = {
@@ -30,11 +70,25 @@ const BtnSubmit = ({ disabled, saving, isEdit }) => (
 );
 
 // ── Componente ───────────────────────────────────────────────────────────────
+// Parsea "YYYYMM" → { anio: "2026", mes: "05" }
+const parsePeriodo = (periodo) => {
+  if (!periodo) return { anio: '', mes: '' };
+  const s = String(periodo).replace('-', '');
+  if (s.length === 6) return { anio: s.slice(0, 4), mes: s.slice(4, 6) };
+  return { anio: '', mes: '' };
+};
+
 const ProyectoModal = ({ show, onHide, onSave, proyecto, saving = false }) => {
   const isEdit = !!proyecto;
   const { register, handleSubmit, reset, formState: { errors } } = useForm();
+  const [periodoAnio, setPeriodoAnio] = useState('');
+  const [periodoMes,  setPeriodoMes]  = useState('');
 
   useEffect(() => {
+    const p = parsePeriodo(proyecto?.periodo);
+    setPeriodoAnio(p.anio);
+    setPeriodoMes(p.mes);
+
     if (proyecto) {
       reset({
         codProy:             proyecto.codProy             ?? '',
@@ -45,22 +99,24 @@ const ProyectoModal = ({ show, onHide, onSave, proyecto, saving = false }) => {
         distribucion:        proyecto.distribucion        ?? '',
         estado:              proyecto.estado              ?? '',
         estadoInterno:       proyecto.estadoInterno       ?? '',
-        periodo:             proyecto.periodo             ?? '',
         historia:            proyecto.historia            ?? '',
         resumenAlcance:      proyecto.resumenAlcance      ?? '',
         montoTotalProyecto:  proyecto.montoTotalProyecto  ?? '',
       });
     } else {
+      setPeriodoAnio('');
+      setPeriodoMes('');
       reset({
         codProy: '', analista: '', nombreRequerimiento: '',
         keyUser: '', tipoDesarrollo: '', distribucion: '',
-        estado: '', estadoInterno: '', periodo: '',
+        estado: '', estadoInterno: '',
         historia: '', resumenAlcance: '', montoTotalProyecto: '',
       });
     }
   }, [proyecto, show, reset]);
 
   const onSubmit = (data) => {
+    const periodo = periodoAnio && periodoMes ? `${periodoAnio}${periodoMes}` : null;
     const payload = {
       ...(!isEdit && { codProy: data.codProy }),
       analista:            data.analista            || null,
@@ -68,9 +124,9 @@ const ProyectoModal = ({ show, onHide, onSave, proyecto, saving = false }) => {
       keyUser:             data.keyUser             || null,
       tipoDesarrollo:      data.tipoDesarrollo      || null,
       distribucion:        data.distribucion        || null,
-      estado:              data.estado,
+      estado:              data.estado              || null,
       estadoInterno:       data.estadoInterno       || null,
-      periodo:             data.periodo             || null,
+      periodo,
       historia:            data.historia            || null,
       resumenAlcance:      data.resumenAlcance      || null,
       montoTotalProyecto:  data.montoTotalProyecto ? parseFloat(data.montoTotalProyecto) : null,
@@ -149,13 +205,22 @@ const ProyectoModal = ({ show, onHide, onSave, proyecto, saving = false }) => {
             <Col md={2}>
               <Form.Group>
                 <Form.Label style={labelStyle}>Periodo</Form.Label>
-                <Form.Control
-                  {...register('periodo', {
-                    maxLength: { value: 10, message: 'Máximo 10 caracteres' },
-                  })}
-                  placeholder="Ej: 2024-Q1"
-                  style={inputStyle}
-                />
+                <div className="d-flex gap-1">
+                  <Form.Select
+                    value={periodoAnio}
+                    onChange={e => setPeriodoAnio(e.target.value)}
+                    style={{ ...inputStyle, flex: 1, minWidth: 0 }}>
+                    <option value="">Año</option>
+                    {ANIOS.map(a => <option key={a} value={a}>{a}</option>)}
+                  </Form.Select>
+                  <Form.Select
+                    value={periodoMes}
+                    onChange={e => setPeriodoMes(e.target.value)}
+                    style={{ ...inputStyle, flex: 1, minWidth: 0 }}>
+                    <option value="">Mes</option>
+                    {MESES.map(m => <option key={m.value} value={m.value}>{m.label}</option>)}
+                  </Form.Select>
+                </div>
               </Form.Group>
             </Col>
             <Col md={3}>
@@ -234,11 +299,7 @@ const ProyectoModal = ({ show, onHide, onSave, proyecto, saving = false }) => {
                 <Form.Label style={labelStyle}>Estado</Form.Label>
                 <Form.Select {...register('estado')} style={inputStyle}>
                   <option value="">Seleccionar...</option>
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="En curso">En curso</option>
-                  <option value="Suspendido">Suspendido</option>
-                  <option value="Finalizado">Finalizado</option>
-                  <option value="Anulado">Anulado</option>
+                  {ESTADOS.map(e => <option key={e} value={e}>{e}</option>)}
                 </Form.Select>
               </Form.Group>
             </Col>
@@ -247,20 +308,7 @@ const ProyectoModal = ({ show, onHide, onSave, proyecto, saving = false }) => {
                 <Form.Label style={labelStyle}>Estado interno</Form.Label>
                 <Form.Select {...register('estadoInterno')} style={inputStyle}>
                   <option value="">Seleccionar...</option>
-                  <option value="1. ENT en Definicion">1. ENT en Definicion</option>
-                  <option value="2. ENT en Elaboración">2. ENT en Elaboración</option>
-                  <option value="2.1 ENT en Aprobación">2.1 ENT en Aprobación</option>
-                  <option value="3. ENT en Cotización">3. ENT en Cotización</option>
-                  <option value="4. En Espera de aprob.">4. En Espera de aprob.</option>
-                  <option value="4.1. Autorizado en espera">4.1. Autorizado en espera</option>
-                  <option value="5. En Construcción">5. En Construcción</option>
-                  <option value="5.1 En Pruebas TIC">5.1 En Pruebas TIC</option>
-                  <option value="5.2 En Pruebas Usuario">5.2 En Pruebas Usuario</option>
-                  <option value="5.3 Marcha Blanca">5.3 Marcha Blanca</option>
-                  <option value="6. Cerrado">6. Cerrado</option>
-                  <option value="7. Desestimado">7. Desestimado</option>
-                  <option value="8. Anulado">8. Anulado</option>
-                  <option value="9. En Pausa">9. En Pausa</option>
+                  {ESTADOS_INTERNOS.map(e => <option key={e} value={e}>{e}</option>)}
                 </Form.Select>
               </Form.Group>
             </Col>

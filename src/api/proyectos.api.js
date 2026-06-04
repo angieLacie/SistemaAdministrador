@@ -11,12 +11,21 @@ export const proyectosApi = {
     return httpGestion.get(`/api/Proyectos${query ? `?${query}` : ""}`);
   },
   resumen:         ()           => httpGestion.get("/api/Proyectos/resumen"),
+  vistaMensual:    (anio, mes, filtros = {}) => {
+    const params = new URLSearchParams({ anio, mes });
+    if (filtros.analista) params.append('analista', filtros.analista);
+    if (filtros.estado)   params.append('estado',   filtros.estado);
+    if (filtros.search)   params.append('search',   filtros.search);
+    return httpGestion.get(`/api/Proyectos/vista-mensual?${params.toString()}`);
+  },
   obtener:         (id)         => httpGestion.get(`/api/Proyectos/${id}`),
   crear:           (payload)    => httpGestion.post("/api/Proyectos", payload),
   editar:          (id, payload)=> httpGestion.put(`/api/Proyectos/${id}`, payload),
   eliminar:        (id)         => httpGestion.del(`/api/Proyectos/${id}`),
-  updateCronograma:(id, payload)=> httpGestion.put(`/api/Proyectos/${id}/cronograma`, payload),
-  dashboard: ()                 => httpGestion.get("/api/Proyectos/dashboard"),
+  updateCronograma:    (id, payload)        => httpGestion.put(`/api/Proyectos/${id}/cronograma`, payload),
+  dashboard:           ()                   => httpGestion.get("/api/Proyectos/dashboard"),
+  disponiblesParaMes:  (anio, mes)          => httpGestion.get(`/api/Proyectos/disponibles-para-mes?anio=${anio}&mes=${mes}`),
+  copiarPeriodo:       (payload)            => httpGestion.post("/api/Proyectos/copiar-periodo", payload),
 };
 
 export const proyectoOCProveedorApi = {

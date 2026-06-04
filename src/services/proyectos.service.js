@@ -3,13 +3,15 @@ import { proyectosApi, proyectoOCProveedorApi, proyectoOCClienteApi, proyectoHor
 export const proyectosService = {
   listar:          async (filtros)       => await proyectosApi.listar(filtros),
   resumen:         async ()              => await proyectosApi.resumen(),
+  vistaMensual:    async (anio, mes, f) => await proyectosApi.vistaMensual(anio, mes, f),
   obtener:         async (id)            => await proyectosApi.obtener(id),
   crear:           async (payload)       => await proyectosApi.crear(payload),
   editar:          async (id, payload)   => await proyectosApi.editar(id, payload),
   eliminar:        async (id)            => await proyectosApi.eliminar(id),
-  updateCronograma:async (id, payload)   => await proyectosApi.updateCronograma(id, payload), 
-dashboard: async () => await proyectosApi.dashboard(),
-
+  updateCronograma:   async (id, payload)      => await proyectosApi.updateCronograma(id, payload),
+  dashboard:          async ()                 => await proyectosApi.dashboard(),
+  disponiblesParaMes: async (anio, mes)        => await proyectosApi.disponiblesParaMes(anio, mes),
+  copiarPeriodo:      async (payload)          => await proyectosApi.copiarPeriodo(payload),
 };
 
 export const proyectoOCProveedorService = {
