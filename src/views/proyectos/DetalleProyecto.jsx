@@ -643,10 +643,10 @@ const DetalleProyecto = () => {
       setLoading(true);
       const [data, control] = await Promise.all([
         proyectosService.obtener(id),
-        proyectoControlMensualService.listarPorProyecto(id),
+        proyectoControlMensualService.listarPorProyecto(id).catch(() => []),
       ]);
       setDetalle(data);
-      setControlMensual(control);
+      setControlMensual(control ?? []);
     } catch (err) {
       toast.error('Error al cargar proyecto: ' + err.message);
     } finally {

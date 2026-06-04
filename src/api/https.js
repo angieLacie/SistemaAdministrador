@@ -45,8 +45,8 @@ export const http = {
 };
 
 // ── Gestion / Proyectos ───────────────────────────────
- const API_GESTION_BASE = import.meta.env.VITE_API_GESTION_URL || "http://10.9.1.113:7035";
-//const API_GESTION_BASE = import.meta.env.VITE_API_GESTION_URL || "https://localhost:7035";
+//const API_GESTION_BASE = import.meta.env.VITE_API_GESTION_URL || "http://10.9.1.113:7035";
+const API_GESTION_BASE = import.meta.env.VITE_API_GESTION_URL || "https://localhost:7035";
   
 async function requestGestion(path, options = {}) {
   const res = await fetch(`${API_GESTION_BASE}${path}`, {
